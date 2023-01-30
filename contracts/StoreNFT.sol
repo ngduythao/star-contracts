@@ -36,8 +36,8 @@ contract StoreNFT is
     /// @dev value is equal to keccak256("Metadata(string name)")
     bytes32 public constant METADATA_TYPEHASH = 0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
 
-    /// @dev value is equal to keccak256("CreateStore(uint256 uid, address account, Metadata metadata)Metadata(string name)")
-    bytes32 public constant CREATE_STORE_TYPEHASH = 0x583c262b026711d41db51bf39b89e3f6e3e9f942b43b100c944e8c6de95c148a;
+    /// @dev value is equal to keccak256("CreateStore(uint256 uid,address account,Metadata metadata)Metadata(string name)")
+    bytes32 public constant CREATE_STORE_TYPEHASH = 0x182bb33cb8661f6356010cf040184dc3c21e21e9f5d7e5fb2479fe6d33e03d21;
 
     uint256 private _idCounter;
     BitMapsUpgradeable.BitMap private _isUsed;
