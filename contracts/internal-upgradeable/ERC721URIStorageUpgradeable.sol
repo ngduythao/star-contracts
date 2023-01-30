@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.7.0) (token/ERC721/extensions/ERC721URIStorage.sol)
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.17;
 
 import { ERC721Upgradeable, StringsUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -14,10 +14,12 @@ abstract contract ERC721URIStorageUpgradeable is Initializable, ERC721Upgradeabl
 
     string internal _baseUri;
 
+    /* solhint-disable func-name-mixedcase */
     function __ERC721URIStorage_init(string memory baseUri_) internal onlyInitializing {
         __ERC721URIStorage_init_unchained(baseUri_);
     }
 
+    /* solhint-disable func-name-mixedcase */
     function __ERC721URIStorage_init_unchained(string memory baseUri_) internal onlyInitializing {
         _setBaseURI(baseUri_);
     }

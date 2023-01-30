@@ -15,12 +15,12 @@ abstract contract EIP712Upgradeable is Initializable {
     // the chainId is also saved to be able to recompute domainSeparator in the case of a fork
     uint256 internal _domainChainId;
 
-    /* solhint-enable var-name-mixedcase */
-
+    /* solhint-disable func-name-mixedcase */
     function __EIP712_init(string memory name, string memory version) internal onlyInitializing {
         __EIP712_init_unchained(name, version);
     }
 
+    /* solhint-disable func-name-mixedcase */
     function __EIP712_init_unchained(string memory name, string memory version) internal onlyInitializing {
         uint256 chainId;
         //solhint-disable-next-line no-inline-assembly
