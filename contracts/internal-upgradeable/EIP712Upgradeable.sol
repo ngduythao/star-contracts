@@ -12,6 +12,8 @@ abstract contract EIP712Upgradeable is Initializable {
     /// @dev value is equal to keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
     bytes32 private constant _TYPE_HASH = 0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
 
+    bytes32 internal _domainSeparator;
+
     // the chainId is also saved to be able to recompute domainSeparator in the case of a fork
     uint256 internal _domainChainId;
 
@@ -32,13 +34,7 @@ abstract contract EIP712Upgradeable is Initializable {
         _HASHED_NAME = hashedName;
         _HASHED_VERSION = hashedVersion;
         _domainChainId = chainId;
-    }
-
-    /**
-     * @dev Returns the domain separator for the current chain.
-     */
-    function _domainSeparatorV4() internal view returns (bytes32) {
-        return _buildDomainSeparator(_TYPE_HASH, _EIP712NameHash(), _EIP712VersionHash());
+        _domainSeparator = _buildDomainSeparator(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION);
     }
 
     function _buildDomainSeparator(bytes32 typeHash, bytes32 nameHash, bytes32 versionHash) private view returns (bytes32) {
@@ -46,27 +42,7 @@ abstract contract EIP712Upgradeable is Initializable {
     }
 
     function _hashTypedDataV4(bytes32 structHash) internal view virtual returns (bytes32) {
-        return ECDSAUpgradeable.toTypedDataHash(_domainSeparatorV4(), structHash);
-    }
-
-    /**
-     * @dev The hash of the name parameter for the EIP712 domain.
-     *
-     * NOTE: This function reads from storage by default, but can be redefined to return a constant value if gas costs
-     * are a concern.
-     */
-    function _EIP712NameHash() internal view virtual returns (bytes32) {
-        return _HASHED_NAME;
-    }
-
-    /**
-     * @dev The hash of the version parameter for the EIP712 domain.
-     *
-     * NOTE: This function reads from storage by default, but can be redefined to return a constant value if gas costs
-     * are a concern.
-     */
-    function _EIP712VersionHash() internal view virtual returns (bytes32) {
-        return _HASHED_VERSION;
+        return ECDSAUpgradeable.toTypedDataHash(_domainSeparator, structHash);
     }
 
     /**

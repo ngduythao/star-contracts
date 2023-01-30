@@ -7,11 +7,12 @@ import { BitMapsUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/st
 import { CountersUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
 import { ERC721Upgradeable, ERC721EnumerableUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import { ERC721URIStorageUpgradeable } from "./internal-upgradeable/ERC721URIStorageUpgradeable.sol";
 import { ERC721BurnableUpgradeable } from "./internal-upgradeable/ERC721BurnableUpgradeable.sol";
-import { ERC721WithPermitUpgradable } from "./internal-upgradeable/ERC721WithPermitUpgradable.sol";
+import { EIP712Upgradeable, ERC721WithPermitUpgradable } from "./internal-upgradeable/ERC721WithPermitUpgradable.sol";
 
 import { IStore } from "./interfaces/IStore.sol";
 
@@ -31,6 +32,13 @@ contract StoreNFT is
     bytes32 public constant OPERATOR_ROLE = 0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
     bytes32 public constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
     bytes32 public constant UPGRADER_ROLE = 0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
+
+    /// @dev value is equal to keccak256("Metadata(string name)")
+    bytes32 public constant METADATA_TYPEHASH = 0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
+
+    /// @dev value is equal to keccak256("CreateStore(uint256 uid, address account, Metadata metadata)Metadata(string name)")
+    bytes32 public constant CREATE_STORE_TYPEHASH = 0x583c262b026711d41db51bf39b89e3f6e3e9f942b43b100c944e8c6de95c148a;
+
     uint256 private _idCounter;
     BitMapsUpgradeable.BitMap private _isUsed;
     mapping(uint256 => Metadata) private _metadata;
@@ -46,8 +54,8 @@ contract StoreNFT is
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
-
-        __ERC721WithPermitUpgradable_init(name_, symbol_, version_);
+        __EIP712_init(name_, version_);
+        __ERC721WithPermitUpgradable_init(name_, symbol_);
         __ERC721URIStorage_init(baseUri_);
         __ERC721Burnable_init();
         __ERC721Enumerable_init();
@@ -72,12 +80,15 @@ contract StoreNFT is
     }
 
     function createStore(uint256 uid_, address account_, Metadata calldata metadata_) external onlyRole(MINTER_ROLE) {
-        uint256 tokenId = _idCounter;
-        _checkUnique(uid_);
-        _metadata[tokenId] = Metadata({ name: metadata_.name });
-        _safeMint(account_, tokenId);
-        emit Registered(uid_, account_, tokenId, metadata_);
-        _idCounter = ++tokenId;
+        _createStore(uid_, account_, metadata_);
+    }
+
+    function createStore(uint256 uid_, address account_, Metadata calldata metadata_, bytes memory signature_) external {
+        bytes32 structHash = keccak256(abi.encode(CREATE_STORE_TYPEHASH, uid_, account_, keccak256(abi.encodePacked(_encodeMetadata(metadata_)))));
+        bytes32 digest = _hashTypedDataV4(structHash);
+        (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
+        require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "invalid signature");
+        _createStore(uid_, account_, metadata_);
     }
 
     function setMetadata(uint256 tokenId_, Metadata calldata metadata_) external {
@@ -95,6 +106,19 @@ contract StoreNFT is
         return _exists(tokenId);
     }
 
+    function _encodeMetadata(Metadata calldata metadata_) internal pure returns (bytes memory) {
+        return abi.encode(METADATA_TYPEHASH, metadata_.name);
+    }
+
+    function _createStore(uint256 uid_, address account_, Metadata calldata metadata_) internal {
+        uint256 tokenId = _idCounter;
+        _checkUnique(uid_);
+        _metadata[tokenId] = Metadata({ name: metadata_.name });
+        _safeMint(account_, tokenId);
+        emit Registered(uid_, account_, tokenId, metadata_);
+        _idCounter = ++tokenId;
+    }
+
     function _checkUnique(uint256 uid_) internal {
         if (_isUsed.get(uid_)) revert AlreadyUsed();
         _isUsed.setTo(uid_, true);
@@ -104,6 +128,7 @@ contract StoreNFT is
         super._beforeTokenTransfer(from, to, tokenId, batchSize);
     }
 
+    /* solhint-disable no-empty-blocks */
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
 
     // The following functions are overrides required by Solidity.

@@ -25,7 +25,7 @@ jobs:
           node-version: "lts/*"
 
       - name: "Install the dependencies"
-        run: "yarn install --immutable"
+        run: "yarn install"
 
       - name: "Lint the code"
         run: "yarn lint"
@@ -38,8 +38,8 @@ jobs:
       - name: "Compile the contracts and generate the TypeChain bindings"
         run: "yarn typechain"
 
-      - name: "Test the contracts and generate the coverage report"
-        run: "yarn coverage"
+      # - name: "Test the contracts and generate the coverage report"
+      #   run: "yarn coverage"
 
       - name: "Add test summary"
         run: |

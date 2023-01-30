@@ -17,19 +17,15 @@ abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712U
 
     mapping(uint256 => uint256) private _nonces;
 
-    bytes32 private _domainSeparator;
-
     /* solhint-disable func-name-mixedcase */
-    function __ERC721WithPermitUpgradable_init(string memory name_, string memory symbol_, string memory version_) internal initializer {
-        __EIP712_init(name_, version_);
+    function __ERC721WithPermitUpgradable_init(string memory name_, string memory symbol_) internal initializer {
         __ERC721_init(name_, symbol_);
         __ERC721WithPermitUpgradable_init_unchained();
     }
 
     /* solhint-disable func-name-mixedcase */
-    function __ERC721WithPermitUpgradable_init_unchained() internal initializer {
-        _domainSeparator = _domainSeparatorV4();
-    }
+    /* solhint-disable no-empty-blocks */
+    function __ERC721WithPermitUpgradable_init_unchained() internal initializer {}
 
     /// @notice Builds the DOMAIN_SEPARATOR (eip712) at time of use
     /// @dev This is not set as a constant, to ensure that the chainId will change in the event of a chain fork
@@ -71,7 +67,7 @@ abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712U
     /// @return the digest (following eip712) to sign
     function _buildDigest(address spender_, uint256 tokenId_, uint256 nonce_, uint256 deadline_) private view returns (bytes32) {
         bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, spender_, tokenId_, nonce_, deadline_));
-        return ECDSAUpgradeable.toTypedDataHash(DOMAIN_SEPARATOR(), structHash);
+        return _hashTypedDataV4(structHash);
     }
 
     /// @dev helper to easily increment a nonce for a given tokenId
