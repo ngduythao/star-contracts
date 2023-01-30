@@ -29,16 +29,19 @@ contract StoreNFT is
 {
     using BitMapsUpgradeable for BitMapsUpgradeable.BitMap;
 
+    /// @dev value is equal to keccak256("OPERATOR_ROLE")
     bytes32 public constant OPERATOR_ROLE = 0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    /// @dev value is equal to keccak256("MINTER_ROLE")
     bytes32 public constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
+    /// @dev value is equal to keccak256("UPGRADER_ROLE")
     bytes32 public constant UPGRADER_ROLE = 0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
-
     /// @dev value is equal to keccak256("Metadata(string name)")
     bytes32 public constant METADATA_TYPEHASH = 0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
-
     /// @dev value is equal to keccak256("CreateStore(uint256 uid,address account,Metadata metadata)Metadata(string name)")
     bytes32 public constant CREATE_STORE_TYPEHASH = 0x182bb33cb8661f6356010cf040184dc3c21e21e9f5d7e5fb2479fe6d33e03d21;
 
+    uint256 private constant CHAIN_ID_SLOT = 3;
+    uint256 private _chainIdentity;
     uint256 private _idCounter;
     BitMapsUpgradeable.BitMap private _isUsed;
     mapping(uint256 => Metadata) private _metadata;
@@ -48,7 +51,7 @@ contract StoreNFT is
         _disableInitializers();
     }
 
-    function initialize(string memory name_, string memory symbol_, string memory version_, string memory baseUri_) public initializer {
+    function initialize(string memory name_, string memory symbol_, string memory version_, string memory baseUri_, uint256 chainIdentity_) public initializer {
         address sender = _msgSender();
 
         __Pausable_init();
@@ -65,6 +68,7 @@ contract StoreNFT is
         _grantRole(MINTER_ROLE, sender);
         _grantRole(UPGRADER_ROLE, sender);
         _idCounter = 1;
+        _chainIdentity = chainIdentity_;
     }
 
     function pause() public onlyRole(OPERATOR_ROLE) {
@@ -84,7 +88,7 @@ contract StoreNFT is
     }
 
     function createStore(uint256 uid_, address account_, Metadata calldata metadata_, bytes memory signature_) external {
-        bytes32 structHash = keccak256(abi.encode(CREATE_STORE_TYPEHASH, uid_, account_, keccak256(abi.encodePacked(_encodeMetadata(metadata_)))));
+        bytes32 structHash = keccak256(abi.encode(CREATE_STORE_TYPEHASH, uid_, account_, _hashMetadata(metadata_)));
         bytes32 digest = _hashTypedDataV4(structHash);
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
         require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "invalid signature");
@@ -106,12 +110,12 @@ contract StoreNFT is
         return _exists(tokenId);
     }
 
-    function _encodeMetadata(Metadata calldata metadata_) internal pure returns (bytes memory) {
-        return abi.encode(METADATA_TYPEHASH, metadata_.name);
+    function _hashMetadata(Metadata calldata metadata_) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(abi.encode(METADATA_TYPEHASH, metadata_.name)));
     }
 
     function _createStore(uint256 uid_, address account_, Metadata calldata metadata_) internal {
-        uint256 tokenId = _idCounter;
+        uint256 tokenId = (_idCounter << CHAIN_ID_SLOT) | _chainIdentity;
         _checkUnique(uid_);
         _metadata[tokenId] = Metadata({ name: metadata_.name });
         _safeMint(account_, tokenId);
