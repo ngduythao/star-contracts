@@ -115,6 +115,14 @@ contract StoreNFT is
         emit SetMetadata(user, tokenId_, metadata_);
     }
 
+    function paymentAmount(address paymentToken_) external view returns (uint256) {
+        return _paymentAmount[paymentToken_];
+    }
+
+    function chainIdentity() external view returns (uint256) {
+        return _chainIdentity;
+    }
+
     function isUsed(uint256 uid_) external view returns (bool) {
         return _isUsed.get(uid_);
     }
@@ -165,4 +173,11 @@ contract StoreNFT is
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721WithPermitUpgradable, AccessControlUpgradeable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[50] private __gap;
 }
