@@ -38,7 +38,7 @@ abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712U
     /// @param tokenId token id
     /// @return current token nonce
     function nonces(uint256 tokenId) public view override returns (uint256) {
-        require(_exists(tokenId), "!UNKNOWN_TOKEN!");
+        require(_exists(tokenId), "!UNKNOWN");
         return _nonces[tokenId];
     }
 
@@ -49,12 +49,12 @@ abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712U
     /// @param deadline_ the deadline for the permit to be used
     /// @param signature_ permit
     function permit(address spender_, uint256 tokenId_, uint256 deadline_, bytes memory signature_) external override {
-        require(deadline_ >= block.timestamp, "permit expired");
+        require(deadline_ >= block.timestamp, "EXPRIED");
 
         bytes32 digest = _buildDigest(spender_, tokenId_, _nonces[tokenId_], deadline_);
 
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
-        require((recoveredAddress != address(0) && _isApprovedOrOwner(recoveredAddress, tokenId_)), "PERMIT");
+        require((recoveredAddress != address(0) && _isApprovedOrOwner(recoveredAddress, tokenId_)), "!PERMIT");
 
         _approve(spender_, tokenId_);
     }

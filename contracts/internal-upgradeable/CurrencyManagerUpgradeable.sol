@@ -28,7 +28,7 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
         if (currency_ == NATIVE_TOKEN) {
             if (isReceived_) {
                 uint256 nativeValue = msg.value;
-                require(nativeValue >= amount_, "Insufficient balance");
+                require(nativeValue >= amount_, "!BALANCE");
                 if (nativeValue > amount_) _safeTransferNativeToken(msg.sender, amount_ - nativeValue);
             }
             _safeTransferNativeToken(to_, amount_);
@@ -60,7 +60,7 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
         // solhint-disable avoid-low-level-calls
         // slither-disable-next-line low-level-calls
         (bool success, ) = to_.call{ value: value_ }("");
-        require(success, "Transfer failed!");
+        require(success, "TF");
     }
 
     /**

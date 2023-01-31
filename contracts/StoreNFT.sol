@@ -102,8 +102,8 @@ contract StoreNFT is
         bytes32 structHash = keccak256(abi.encode(CREATE_STORE_TYPEHASH, uid_, account_, _hashMetadata(metadata_)));
         bytes32 digest = _hashTypedDataV4(structHash);
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
-        require(amount > 0, "INVALID_TOKEN");
-        require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "SIG");
+        require(amount > 0, "!TOKEN");
+        require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "!SIG");
         _transferCurrency(paymentToken_, _msgSender(), treasury, amount, true);
         _createStore(uid_, account_, metadata_);
     }

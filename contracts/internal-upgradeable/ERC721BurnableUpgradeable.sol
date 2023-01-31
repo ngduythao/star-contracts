@@ -27,7 +27,7 @@ abstract contract ERC721BurnableUpgradeable is Initializable, ERC721Upgradeable 
      */
     function burn(uint256 tokenId) public virtual {
         //solhint-disable-next-line max-line-length
-        require(_isApprovedOrOwner(msg.sender, tokenId), "ERC721: caller is not token owner or approved");
+        require(_isApprovedOrOwner(msg.sender, tokenId), "!OWNER_APPROVE");
         _burn(tokenId);
     }
 
