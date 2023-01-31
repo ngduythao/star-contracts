@@ -25,7 +25,6 @@ abstract contract EIP712Upgradeable is Initializable {
     /* solhint-disable func-name-mixedcase */
     function __EIP712_init_unchained(string memory name, string memory version) internal onlyInitializing {
         uint256 chainId;
-        //solhint-disable-next-line no-inline-assembly
         assembly {
             chainId := chainid()
         }
