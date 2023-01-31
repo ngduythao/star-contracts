@@ -3,25 +3,26 @@ pragma solidity 0.8.17;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import { BitMapsUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/BitMapsUpgradeable.sol";
 import { CountersUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
 import { ERC721Upgradeable, ERC721EnumerableUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import { ERC721URIStorageUpgradeable } from "./internal-upgradeable/ERC721URIStorageUpgradeable.sol";
 import { ERC721BurnableUpgradeable } from "./internal-upgradeable/ERC721BurnableUpgradeable.sol";
 import { EIP712Upgradeable, ERC721WithPermitUpgradable } from "./internal-upgradeable/ERC721WithPermitUpgradable.sol";
-
+import { CurrencyManagerUpgradeable } from "./internal-upgradeable/CurrencyManagerUpgradeable.sol";
 import { IStore } from "./interfaces/IStore.sol";
 
 contract StoreNFT is
     IStore,
     Initializable,
     UUPSUpgradeable,
-    AccessControlUpgradeable,
     PausableUpgradeable,
+    AccessControlUpgradeable,
+    CurrencyManagerUpgradeable,
     ERC721WithPermitUpgradable,
     ERC721BurnableUpgradeable,
     ERC721EnumerableUpgradeable,
@@ -45,6 +46,7 @@ contract StoreNFT is
     uint256 private _idCounter;
     BitMapsUpgradeable.BitMap private _isUsed;
     mapping(uint256 => Metadata) private _metadata;
+    mapping(address => uint256) private _paymentAmount;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -62,7 +64,7 @@ contract StoreNFT is
         __ERC721URIStorage_init(baseUri_);
         __ERC721Burnable_init();
         __ERC721Enumerable_init();
-
+        _setTreasury(sender);
         _grantRole(DEFAULT_ADMIN_ROLE, sender);
         _grantRole(OPERATOR_ROLE, sender);
         _grantRole(MINTER_ROLE, sender);
@@ -71,11 +73,11 @@ contract StoreNFT is
         _chainIdentity = chainIdentity_;
     }
 
-    function pause() public onlyRole(OPERATOR_ROLE) {
+    function pause() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
-    function unpause() public onlyRole(OPERATOR_ROLE) {
+    function unpause() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 
@@ -83,15 +85,26 @@ contract StoreNFT is
         _setBaseURI(uri_);
     }
 
+    function setTreasury(address treasury_) external onlyRole(OPERATOR_ROLE) {
+        _setTreasury(treasury_);
+    }
+
+    function setPayment(address token_, uint256 amount_) external onlyRole(OPERATOR_ROLE) {
+        _paymentAmount[token_] = amount_;
+    }
+
     function createStore(uint256 uid_, address account_, Metadata calldata metadata_) external onlyRole(MINTER_ROLE) {
         _createStore(uid_, account_, metadata_);
     }
 
-    function createStore(uint256 uid_, address account_, Metadata calldata metadata_, bytes memory signature_) external {
+    function createStore(uint256 uid_, address account_, Metadata calldata metadata_, address paymentToken_, bytes memory signature_) external {
+        uint256 amount = _paymentAmount[paymentToken_];
         bytes32 structHash = keccak256(abi.encode(CREATE_STORE_TYPEHASH, uid_, account_, _hashMetadata(metadata_)));
         bytes32 digest = _hashTypedDataV4(structHash);
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
-        require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "invalid signature");
+        require(amount > 0, "INVALID_TOKEN");
+        require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "SIG");
+        _transferCurrency(paymentToken_, _msgSender(), treasury, amount, true);
         _createStore(uid_, account_, metadata_);
     }
 

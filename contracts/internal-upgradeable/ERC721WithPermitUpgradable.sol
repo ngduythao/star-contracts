@@ -54,7 +54,7 @@ abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712U
         bytes32 digest = _buildDigest(spender_, tokenId_, _nonces[tokenId_], deadline_);
 
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
-        require((recoveredAddress != address(0) && _isApprovedOrOwner(recoveredAddress, tokenId_)), "permit is invalid");
+        require((recoveredAddress != address(0) && _isApprovedOrOwner(recoveredAddress, tokenId_)), "PERMIT");
 
         _approve(spender_, tokenId_);
     }
