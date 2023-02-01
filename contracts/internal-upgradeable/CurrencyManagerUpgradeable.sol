@@ -9,9 +9,9 @@ import { ICurrencyManager } from "./interfaces/ICurrencyManager.sol";
 contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    uint256 public constant ERC20_TYPE = 1;
-    uint256 public constant ERC721_TYPE = 2;
-    address public constant NATIVE_TOKEN = address(0); // The address interpreted as native token of the chain.
+    uint256 private constant ERC20_TYPE = 1;
+    uint256 private constant ERC721_TYPE = 2;
+    address private constant NATIVE_TOKEN = address(0); // The address interpreted as native token of the chain.
     address public treasury;
 
     // solhint-disable func-name-mixedcase

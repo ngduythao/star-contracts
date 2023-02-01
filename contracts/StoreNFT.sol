@@ -53,22 +53,21 @@ contract StoreNFT is
         _disableInitializers();
     }
 
-    function initialize(string memory name_, string memory symbol_, string memory version_, string memory baseUri_, uint256 chainIdentity_) public initializer {
+    function initialize(string calldata name_, string calldata symbol_, string calldata version_, string calldata baseUri_, uint256 chainIdentity_) external initializer {
+        __Pausable_init_unchained();
+        __EIP712_init_unchained(name_, version_);
+        __ERC721URIStorage_init_unchained(baseUri_);
+        __ERC721WithPermitUpgradable_init(name_, symbol_);
+
         address sender = _msgSender();
 
-        __Pausable_init();
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
-        __EIP712_init(name_, version_);
-        __ERC721WithPermitUpgradable_init(name_, symbol_);
-        __ERC721URIStorage_init(baseUri_);
-        __ERC721Burnable_init();
-        __ERC721Enumerable_init();
         _setTreasury(sender);
-        _grantRole(DEFAULT_ADMIN_ROLE, sender);
-        _grantRole(OPERATOR_ROLE, sender);
+
         _grantRole(MINTER_ROLE, sender);
+        _grantRole(OPERATOR_ROLE, sender);
         _grantRole(UPGRADER_ROLE, sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, sender);
+
         _idCounter = 1;
         _chainIdentity = chainIdentity_;
     }
@@ -97,13 +96,15 @@ contract StoreNFT is
         _createStore(uid_, account_, metadata_);
     }
 
-    function createStore(uint256 uid_, address account_, Metadata calldata metadata_, address paymentToken_, bytes memory signature_) external {
+    function createStore(uint256 uid_, address account_, Metadata calldata metadata_, address paymentToken_, bytes calldata signature_) external {
         uint256 amount = _paymentAmount[paymentToken_];
+        require(amount > 0, "!TOKEN");
+
         bytes32 structHash = keccak256(abi.encode(CREATE_STORE_TYPEHASH, uid_, account_, _hashMetadata(metadata_)));
         bytes32 digest = _hashTypedDataV4(structHash);
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
-        require(amount > 0, "!TOKEN");
         require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "!SIG");
+
         _transferCurrency(paymentToken_, _msgSender(), treasury, amount, true);
         _createStore(uid_, account_, metadata_);
     }
@@ -136,17 +137,22 @@ contract StoreNFT is
     }
 
     function _createStore(uint256 uid_, address account_, Metadata calldata metadata_) internal {
-        uint256 tokenId = (_idCounter << CHAIN_ID_SLOT) | _chainIdentity;
         _checkUnique(uid_);
+
+        uint256 tokenId = (_idCounter << CHAIN_ID_SLOT) | _chainIdentity;
         _metadata[tokenId] = Metadata({ name: metadata_.name });
         _safeMint(account_, tokenId);
+
         emit Registered(uid_, account_, tokenId, metadata_);
-        _idCounter = ++tokenId;
+
+        unchecked {
+            _idCounter = tokenId + 1;
+        }
     }
 
     function _checkUnique(uint256 uid_) internal {
         if (_isUsed.get(uid_)) revert AlreadyUsed();
-        _isUsed.setTo(uid_, true);
+        _isUsed.set(uid_);
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) whenNotPaused {

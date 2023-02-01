@@ -16,7 +16,7 @@ contract SToken is IStarToken, AccessControl, Pausable, ERC20, ERC20Burnable, ER
     /// @dev value is equal to keccak256("MINTER_ROLE")
     bytes32 public constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
 
-    constructor() ERC20("SToken", "S") ERC20Permit("StarToken") {
+    constructor() payable Pausable() ERC20("SToken", "S") ERC20Permit("StarToken") {
         address sender = _msgSender();
         _grantRole(DEFAULT_ADMIN_ROLE, sender);
         _grantRole(MINTER_ROLE, sender);

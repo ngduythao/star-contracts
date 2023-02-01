@@ -47,6 +47,7 @@
     "lint-staged": "^13.0.4",
     "lodash": "^4.17.21",
     "mocha": "^10.1.0",
+    "oz-custom": "^1.1.5-f-alpha",
     "pinst": "^3.0.0",
     "prettier": "^2.8.0",
     "prettier-plugin-solidity": "^1.0.0",
@@ -79,7 +80,7 @@
   "scripts": {
     "clean": "shx rm -rf ./artifacts ./cache ./coverage ./types ./coverage.json && yarn typechain",
     "commit": "git-cz",
-    "compile": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat compile",
+    "compile": "prettier --write ./contracts -l && cross-env TS_NODE_TRANSPILE_ONLY=true hardhat compile && solhint --config ./.solhint.json -f table ./contracts/**/*.sol -f table ./contracts/*.sol",
     "coverage": "hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"test/**/*.ts\" && yarn typechain",
     "deploy": "hardhat deploy:Greeter",
     "lint": "yarn lint:sol && yarn lint:ts && yarn prettier:check",

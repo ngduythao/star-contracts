@@ -7,44 +7,52 @@ pragma solidity 0.8.17;
  */
 library BitMaps {
     struct BitMap {
-        mapping(uint256 => uint256) _data;
+        mapping(uint256 => uint256) map;
     }
 
     /**
      * @dev Returns whether the bit at `index` is set.
      */
-    function get(BitMap storage bitmap, uint256 index) internal view returns (bool) {
-        uint256 bucket = index >> 8;
-        uint256 mask = 1 << (index & 0xff);
-        return bitmap._data[bucket] & mask != 0;
+    function get(BitMap storage bitmap, uint256 index) internal view returns (bool isSet) {
+        uint256 value = bitmap.map[index >> 8] & (1 << (index & 0xff));
+
+        assembly {
+            isSet := value // Assign isSet to whether the value is non zero.
+        }
     }
 
     /**
      * @dev Sets the bit at `index` to the boolean `value`.
      */
-    function setTo(BitMap storage bitmap, uint256 index, bool value) internal {
-        if (value) {
-            set(bitmap, index);
-        } else {
-            unset(bitmap, index);
+    function setTo(BitMap storage bitmap, uint256 index, bool shouldSet) internal {
+        uint256 value = bitmap.map[index >> 8];
+
+        assembly {
+            // The following sets the bit at `shift` without branching.
+            let shift := and(index, 0xff)
+            // Isolate the bit at `shift`.
+            let x := and(shr(shift, value), 1)
+            // Xor it with `shouldSet`. Results in 1 if both are different, else 0.
+            x := xor(x, shouldSet)
+            // Shifts the bit back. Then, xor with value.
+            // Only the bit at `shift` will be flipped if they differ.
+            // Every other bit will stay the same, as they are xor'ed with zeroes.
+            value := xor(value, shl(shift, x))
         }
+        bitmap.map[index >> 8] = value;
     }
 
     /**
      * @dev Sets the bit at `index`.
      */
     function set(BitMap storage bitmap, uint256 index) internal {
-        uint256 bucket = index >> 8;
-        uint256 mask = 1 << (index & 0xff);
-        bitmap._data[bucket] |= mask;
+        bitmap.map[index >> 8] |= (1 << (index & 0xff));
     }
 
     /**
      * @dev Unsets the bit at `index`.
      */
     function unset(BitMap storage bitmap, uint256 index) internal {
-        uint256 bucket = index >> 8;
-        uint256 mask = 1 << (index & 0xff);
-        bitmap._data[bucket] &= ~mask;
+        bitmap.map[index >> 8] &= ~(1 << (index & 0xff));
     }
 }

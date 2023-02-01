@@ -2,27 +2,30 @@
 
 pragma solidity 0.8.17;
 
+import { ILockable } from "./interfaces/ILockable.sol";
+
 import { BitMaps } from "../libraries/BitMaps.sol";
-import { Helper } from "../libraries/Helper.sol";
+import { Bytes32Address } from "../libraries/Bytes32Address.sol";
 
 error Lockable__Locked();
 
-abstract contract Lockable {
-    using Helper for address;
+abstract contract Lockable is ILockable {
+    using Bytes32Address for address;
     using BitMaps for BitMaps.BitMap;
 
     BitMaps.BitMap private _isLocked;
 
     function isLocked(address account) external view returns (bool) {
-        return _isLocked.get(account.toUint256());
+        return _isLocked.get(account.fillLast96Bits());
     }
 
     function _notLocked(address sender_, address from_, address to_) internal view virtual {
-        if (_isLocked.get(sender_.toUint256()) || _isLocked.get(from_.toUint256()) || _isLocked.get(to_.toUint256())) revert Lockable__Locked();
+        if (_isLocked.get(sender_.fillLast96Bits()) || _isLocked.get(from_.fillLast96Bits()) || _isLocked.get(to_.fillLast96Bits())) revert Lockable__Locked();
     }
 
     function _setLockUser(address account_, bool status_) internal {
-        uint256 account = account_.toUint256();
-        _isLocked.setTo(account, status_);
+        _isLocked.setTo(account_.fillLast96Bits(), status_);
+
+        emit NewUserStatus(msg.sender, account_, status_);
     }
 }

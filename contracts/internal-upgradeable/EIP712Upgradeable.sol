@@ -18,7 +18,7 @@ abstract contract EIP712Upgradeable is Initializable {
     uint256 internal _domainChainId;
 
     /* solhint-disable func-name-mixedcase */
-    function __EIP712_init(string memory name, string memory version) internal onlyInitializing {
+    function __EIP712_init(string calldata name, string calldata version) internal onlyInitializing {
         __EIP712_init_unchained(name, version);
     }
 
@@ -33,7 +33,7 @@ abstract contract EIP712Upgradeable is Initializable {
         _HASHED_NAME = hashedName;
         _HASHED_VERSION = hashedVersion;
         _domainChainId = chainId;
-        _domainSeparator = _buildDomainSeparator(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION);
+        _domainSeparator = _buildDomainSeparator(_TYPE_HASH, hashedName, hashedVersion);
     }
 
     function _buildDomainSeparator(bytes32 typeHash, bytes32 nameHash, bytes32 versionHash) private view returns (bytes32) {

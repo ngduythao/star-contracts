@@ -15,12 +15,12 @@ abstract contract ERC721URIStorageUpgradeable is Initializable, ERC721Upgradeabl
     string internal _baseUri;
 
     /* solhint-disable func-name-mixedcase */
-    function __ERC721URIStorage_init(string memory baseUri_) internal onlyInitializing {
+    function __ERC721URIStorage_init(string calldata baseUri_) internal onlyInitializing {
         __ERC721URIStorage_init_unchained(baseUri_);
     }
 
     /* solhint-disable func-name-mixedcase */
-    function __ERC721URIStorage_init_unchained(string memory baseUri_) internal onlyInitializing {
+    function __ERC721URIStorage_init_unchained(string calldata baseUri_) internal onlyInitializing {
         _setBaseURI(baseUri_);
     }
 

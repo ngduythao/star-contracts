@@ -18,8 +18,8 @@ abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712U
     mapping(uint256 => uint256) private _nonces;
 
     /* solhint-disable func-name-mixedcase */
-    function __ERC721WithPermitUpgradable_init(string memory name_, string memory symbol_) internal initializer {
-        __ERC721_init(name_, symbol_);
+    function __ERC721WithPermitUpgradable_init(string calldata name_, string calldata symbol_) internal initializer {
+        __ERC721_init_unchained(name_, symbol_);
         __ERC721WithPermitUpgradable_init_unchained();
     }
 
@@ -73,7 +73,12 @@ abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712U
     /// @dev helper to easily increment a nonce for a given tokenId
     /// @param tokenId the tokenId to increment the nonce for
     function _incrementNonce(uint256 tokenId) internal {
-        _nonces[tokenId]++;
+        assembly {
+            mstore(0x00, tokenId)
+            mstore(0x20, _nonces.slot)
+            let key := keccak256(0x00, 0x40)
+            sstore(key, add(sload(key), 1))
+        }
     }
 
     /// @dev _transfer override to be able to increment the nonce
