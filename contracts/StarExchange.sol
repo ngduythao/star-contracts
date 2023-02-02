@@ -125,10 +125,6 @@ contract StarExchange is
         address buyer = _msgSender();
         bytes32 orderHash = sellerAsk.hash();
 
-        require(sellerAsk.currency == address(0), "!Native");
-
-        require(sellerAsk.price <= msg.value, "!Balance");
-
         // Check the maker ask order
         _validateOrder(sellerAsk, orderHash);
 
