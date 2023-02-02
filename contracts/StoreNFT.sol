@@ -5,7 +5,6 @@ import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/I
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import { BitMapsUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/BitMapsUpgradeable.sol";
-import { CountersUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
@@ -40,6 +39,7 @@ contract StoreNFT is
     /// @dev value is equal to keccak256("CreateStore(uint256 uid,address account,Metadata metadata)Metadata(string name)")
     bytes32 public constant CREATE_STORE_TYPEHASH = 0x182bb33cb8661f6356010cf040184dc3c21e21e9f5d7e5fb2479fe6d33e03d21;
 
+    address public treasury;
     uint256 private constant CHAIN_ID_SLOT = 3;
     uint256 private _chainIdentity;
     uint256 private _idCounter;
@@ -103,8 +103,7 @@ contract StoreNFT is
         bytes32 digest = _hashTypedDataV4(structHash);
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
         require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "!SIG");
-
-        _transferCurrency(paymentToken_, _msgSender(), treasury, amount, true);
+        _transferCurrency(paymentToken_, _msgSender(), treasury, amount);
         _createStore(uid_, account_, metadata_);
     }
 
@@ -169,6 +168,12 @@ contract StoreNFT is
 
     function _baseURI() internal view override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
         return _baseUri;
+    }
+
+    function _setTreasury(address treasury_) internal {
+        if (address(treasury_) == address(0)) revert ZeroAddress();
+        emit TreasuryUpdated(treasury, treasury_);
+        treasury = treasury_;
     }
 
     function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {

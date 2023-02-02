@@ -3,8 +3,5 @@ pragma solidity 0.8.17;
 
 interface ICurrencyManager {
     /* ========== ERRORS ========== */
-    error Zero();
-
-    /* ========== EVENTS ========== */
-    event TreasuryUpdated(address previousTreasury, address newTreasury);
+    error NotReceivedERC721();
 }

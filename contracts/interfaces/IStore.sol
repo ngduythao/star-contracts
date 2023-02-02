@@ -13,6 +13,8 @@ interface IStore {
         string name;
     }
 
+    event TreasuryUpdated(address oldTreasury, address newTreasury);
+
     event SetMetadata(address user, uint256 tokenId, Metadata metadata);
 
     event Registered(uint256 uid, address user, uint256 tokenId, Metadata metadata);
