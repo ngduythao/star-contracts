@@ -17,14 +17,11 @@ abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712U
 
     mapping(uint256 => uint256) private _nonces;
 
-    /* solhint-disable func-name-mixedcase */
-    function __ERC721WithPermitUpgradable_init(string calldata name_, string calldata symbol_) internal initializer {
-        __ERC721_init_unchained(name_, symbol_);
+    function __ERC721WithPermitUpgradable_init(string memory name_, string memory symbol_) internal initializer {
+        __ERC721_init(name_, symbol_);
         __ERC721WithPermitUpgradable_init_unchained();
     }
 
-    /* solhint-disable func-name-mixedcase */
-    /* solhint-disable no-empty-blocks */
     function __ERC721WithPermitUpgradable_init_unchained() internal initializer {}
 
     /// @notice Builds the DOMAIN_SEPARATOR (eip712) at time of use

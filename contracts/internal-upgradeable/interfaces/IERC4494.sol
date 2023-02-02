@@ -5,7 +5,6 @@ pragma solidity 0.8.17;
 /// @notice See https://github.com/dievardump/erc721-with-permits and https://eips.ethereum.org/EIPS/eip-4494
 /// @author Simon Fremaux (@dievardump) & William SchwabSchwab (@wschwab)
 interface IERC4494 {
-    /* solhint-disable func-name-mixedcase */
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
     /// @notice Allows to retrieve current nonce for token

@@ -136,7 +136,7 @@ contract StarExchange is
         _isNonceExecutedOrCancelled[sellerAsk.signer].setTo(sellerAsk.nonce, true);
 
         // Execute transfer currency
-        _transferFeesAndFunds(sellerAsk.collection, sellerAsk.currency, buyer, sellerAsk.signer, sellerAsk.price);
+        _transferFeesAndFunds(sellerAsk.currency, buyer, sellerAsk.signer, sellerAsk.price);
 
         // Execute transfer token collection
         _transferNonFungibleToken(sellerAsk.collection, sellerAsk.signer, buyer, sellerAsk.tokenId, sellerAsk.endTime, sellerAsk.permit);
@@ -164,13 +164,12 @@ contract StarExchange is
 
     /**
      * @notice Transfer fees and funds to royalty recipient, protocol, and seller
-     * @param collection_ non fungible token address for the transfer
      * @param currency_ currency being used for the purchase (e.g., WETH/USDC)
      * @param from_ sender of the funds
      * @param to_ seller's recipient
      * @param amount_ amount being transferred (in currency)
      */
-    function _transferFeesAndFunds(address collection_, address currency_, address from_, address to_, uint256 amount_) internal {
+    function _transferFeesAndFunds(address currency_, address from_, address to_, uint256 amount_) internal {
         if (currency_ == NATIVE_TOKEN) {
             _receiveNative(amount_);
         }

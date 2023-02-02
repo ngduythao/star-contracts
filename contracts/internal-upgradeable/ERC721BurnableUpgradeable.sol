@@ -10,12 +10,8 @@ import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/I
  * @dev ERC721 Token that can be burned (destroyed).
  */
 abstract contract ERC721BurnableUpgradeable is Initializable, ERC721Upgradeable {
-    /* solhint-disable func-name-mixedcase */
-    /* solhint-disable no-empty-blocks */
     function __ERC721Burnable_init() internal onlyInitializing {}
 
-    /* solhint-disable func-name-mixedcase */
-    /* solhint-disable no-empty-blocks */
     function __ERC721Burnable_init_unchained() internal onlyInitializing {}
 
     /**
