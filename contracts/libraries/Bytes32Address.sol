@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 
 library Bytes32Address {
     function fromFirst20Bytes(bytes32 bytesValue) internal pure returns (address addr) {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 /**
  * @title OrderTypes
@@ -18,7 +18,7 @@ library OrderTypes {
         uint256 nonce; // order nonce (must be unique)
         uint256 startTime; // startTime in timestamp
         uint256 endTime; // endTime in timestamp
-        bytes permit; //
+        bytes permit; // token permit
         uint8 v; // v: parameter (27 or 28)
         bytes32 r; // r: parameter
         bytes32 s; // s: parameter
@@ -36,7 +36,8 @@ library OrderTypes {
                     sellerOrder.currency,
                     sellerOrder.nonce,
                     sellerOrder.startTime,
-                    sellerOrder.endTime
+                    sellerOrder.endTime,
+                    keccak256(sellerOrder.permit)
                 )
             );
     }

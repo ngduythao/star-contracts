@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { OrderTypes } from "../libraries/OrderTypes.sol";
 
 /**
- * @title StrategyStandardSaleForFixedPriceV1B
- * @notice Strategy that executes an order at a fixed price that
- * can be taken either by a bid or an ask.
+ * @title FeeManagerUpgradeable
+ * @notice Protocol fee management
  */
 contract FeeManagerUpgradeable is Initializable {
     // Event if the protocol fee changes

@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
-interface IStore {
+interface IStarNFT {
     /* ========== ERRORS ========== */
 
     error ZeroAddress();
@@ -11,6 +11,12 @@ interface IStore {
 
     struct Metadata {
         string name;
+    }
+
+    struct Store {
+        uint256 uid;
+        address account;
+        Metadata metadata;
     }
 
     event TreasuryUpdated(address oldTreasury, address newTreasury);

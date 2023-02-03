@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -13,10 +13,10 @@ import { ERC721URIStorageUpgradeable } from "./internal-upgradeable/ERC721URISto
 import { ERC721BurnableUpgradeable } from "./internal-upgradeable/ERC721BurnableUpgradeable.sol";
 import { EIP712Upgradeable, ERC721WithPermitUpgradable } from "./internal-upgradeable/ERC721WithPermitUpgradable.sol";
 import { CurrencyManagerUpgradeable } from "./internal-upgradeable/CurrencyManagerUpgradeable.sol";
-import { IStore } from "./interfaces/IStore.sol";
+import { IStarNFT } from "./interfaces/IStarNFT.sol";
 
-contract StoreNFT is
-    IStore,
+contract StarNFT is
+    IStarNFT,
     UUPSUpgradeable,
     PausableUpgradeable,
     AccessControlUpgradeable,
@@ -36,8 +36,8 @@ contract StoreNFT is
     bytes32 public constant UPGRADER_ROLE = 0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
     /// @dev value is equal to keccak256("Metadata(string name)")
     bytes32 public constant METADATA_TYPEHASH = 0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
-    /// @dev value is equal to keccak256("CreateStore(uint256 uid,address account,Metadata metadata)Metadata(string name)")
-    bytes32 public constant CREATE_STORE_TYPEHASH = 0x182bb33cb8661f6356010cf040184dc3c21e21e9f5d7e5fb2479fe6d33e03d21;
+    /// @dev value is equal to keccak256("Store(uint256 uid,address account,Metadata metadata)Metadata(string name)")
+    bytes32 public constant STORE_TYPEHASH = 0x846c0ba6933a8d5c76907555263138af551c266efcf9b26fa6b0634d2aa419a2;
 
     address public treasury;
     uint256 private constant CHAIN_ID_SLOT = 3;
@@ -91,20 +91,20 @@ contract StoreNFT is
         _paymentAmount[token_] = amount_;
     }
 
-    function createStore(uint256 uid_, address account_, Metadata calldata metadata_) external onlyRole(MINTER_ROLE) {
-        _createStore(uid_, account_, metadata_);
+    function createStore(Store calldata store_) external onlyRole(MINTER_ROLE) {
+        _createStore(store_.uid, store_.account, store_.metadata);
     }
 
-    function createStore(uint256 uid_, address account_, Metadata calldata metadata_, address paymentToken_, bytes calldata signature_) external {
+    function createStore(Store calldata store_, address paymentToken_, bytes calldata signature_) external {
         uint256 amount = _paymentAmount[paymentToken_];
         require(amount > 0, "!TOKEN");
 
-        bytes32 structHash = keccak256(abi.encode(CREATE_STORE_TYPEHASH, uid_, account_, _hashMetadata(metadata_)));
+        bytes32 structHash = keccak256(abi.encode(STORE_TYPEHASH, store_.uid, store_.account, _hashMetadata(store_.metadata)));
         bytes32 digest = _hashTypedDataV4(structHash);
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
         require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "!SIG");
         _transferCurrency(paymentToken_, _msgSender(), treasury, amount);
-        _createStore(uid_, account_, metadata_);
+        _createStore(store_.uid, store_.account, store_.metadata);
     }
 
     function setMetadata(uint256 tokenId_, Metadata calldata metadata_) external {
