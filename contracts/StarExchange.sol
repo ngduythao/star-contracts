@@ -70,18 +70,23 @@ contract StarExchange is
         _disableInitializers();
     }
 
-    function initialize(string memory name_, string memory version_) public initializer {
+    function initialize(string calldata name_, string calldata version_) public initializer {
+        __Pausable_init_unchained();
+        __ReentrancyGuard_init_unchained();
+        __EIP712_init_unchained(name_, version_);
+
+        bytes32 operatorRole = OPERATOR_ROLE;
+        bytes32 currencyRole = CURRENCY_ROLE;
+
+        _setRoleAdmin(currencyRole, operatorRole);
+        _setRoleAdmin(COLLECTION_ROLE, operatorRole);
+
+        _grantRole(currencyRole, address(0));
+
         address sender = _msgSender();
-        __Pausable_init();
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
-        __EIP712_init(name_, version_);
-        _setRoleAdmin(CURRENCY_ROLE, OPERATOR_ROLE);
-        _setRoleAdmin(COLLECTION_ROLE, OPERATOR_ROLE);
-        _grantRole(DEFAULT_ADMIN_ROLE, sender);
-        _grantRole(OPERATOR_ROLE, sender);
+        _grantRole(operatorRole, sender);
         _grantRole(UPGRADER_ROLE, sender);
-        _grantRole(CURRENCY_ROLE, address(0));
+        _grantRole(DEFAULT_ADMIN_ROLE, sender);
     }
 
     /**
@@ -89,11 +94,21 @@ contract StarExchange is
      * @param minNonce_ minimum user nonce
      */
     function cancelAllOrders(uint256 minNonce_) external {
-        address sender = _msgSender();
-        require(minNonce_ > minNonce[sender] && minNonce_ < minNonce[sender] + 10000, "!N");
-        minNonce[sender] = minNonce_;
+        bytes32 nonceKey;
+        uint256 nonce;
+        assembly {
+            mstore(0, caller())
+            mstore(32, minNonce.slot)
+            nonceKey := keccak256(0, 64)
+            nonce := sload(nonceKey)
+        }
 
-        emit CancelAllOrders(sender, minNonce_);
+        require(minNonce_ > nonce && minNonce_ < nonce + 10000, "!N");
+        assembly {
+            sstore(nonceKey, minNonce_)
+        }
+
+        emit CancelAllOrders(_msgSender(), minNonce_);
     }
 
     /**
@@ -102,13 +117,17 @@ contract StarExchange is
      */
     function cancelSellOrders(uint256[] calldata nonces_) external {
         uint256 length = nonces_.length;
+
+        require(length != 0, "EMP");
+
         address sender = _msgSender();
 
-        require(length > 0, "EMP");
+        uint256 _minNonce = minNonce[sender];
+        BitMapsUpgradeable.BitMap storage map = _isNonceExecutedOrCancelled[sender];
 
-        for (uint256 i = 0; i < length; i++) {
-            require(nonces_[i] >= minNonce[sender], "LN");
-            _isNonceExecutedOrCancelled[sender].setTo(nonces_[i], true);
+        for (uint256 i; i < length; ) {
+            require(nonces_[i] >= _minNonce, "LN");
+            map.set(nonces_[i]);
             unchecked {
                 ++i;
             }
@@ -122,15 +141,15 @@ contract StarExchange is
      * @param sellerAsk seller ask order
      */
     function buy(OrderTypes.SellerOrder calldata sellerAsk) external payable override nonReentrant {
-        address buyer = _msgSender();
         bytes32 orderHash = sellerAsk.hash();
 
         // Check the maker ask order
         _validateOrder(sellerAsk, orderHash);
 
         // prevents replay
-        _isNonceExecutedOrCancelled[sellerAsk.signer].setTo(sellerAsk.nonce, true);
+        _isNonceExecutedOrCancelled[sellerAsk.signer].set(sellerAsk.nonce);
 
+        address buyer = _msgSender();
         // Execute transfer currency
         _transferFeesAndFunds(sellerAsk.currency, buyer, sellerAsk.signer, sellerAsk.price);
 
@@ -177,9 +196,10 @@ contract StarExchange is
         {
             uint256 protocolFeeAmount = _calculateProtocolFee(amount_);
 
+            address feeRecipient = _protocolFeeRecipient;
             // Check if the protocol fee is different than 0
-            if ((_protocolFeeRecipient != address(0)) && (protocolFeeAmount != 0)) {
-                _transferCurrency(currency_, from_, _protocolFeeRecipient, protocolFeeAmount);
+            if (protocolFeeAmount != 0 && feeRecipient != address(0)) {
+                _transferCurrency(currency_, from_, feeRecipient, protocolFeeAmount);
                 finalSellerAmount -= protocolFeeAmount;
             }
         }
@@ -211,16 +231,8 @@ contract StarExchange is
      * @param order seller order
      */
     function _validateOrder(OrderTypes.SellerOrder calldata order, bytes32 orderHash) private view {
-        (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(_hashTypedDataV4(orderHash), order.v, order.r, order.s);
-
-        // Verify the validity of the signature
-        require(recoveredAddress != address(0) && recoveredAddress == order.signer, "!Signer");
-
-        // Verify whether order nonce has expired
-        require((!_isNonceExecutedOrCancelled[order.signer].get(order.nonce)) && (order.nonce >= minNonce[order.signer]), "!Nonce");
-
         // Verify the price is not 0
-        require(order.price > 0, "!Price");
+        require(order.price != 0, "!Price");
 
         // Verify order timestamp
         require(order.startTime <= block.timestamp && order.endTime >= block.timestamp, "!Time");
@@ -228,5 +240,13 @@ contract StarExchange is
         // Verify whether the currency is whitelisted
         require(hasRole(CURRENCY_ROLE, order.currency), "!Currency");
         require(hasRole(COLLECTION_ROLE, order.collection), "!Collection");
+
+        (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(_hashTypedDataV4(orderHash), order.v, order.r, order.s);
+
+        // Verify the validity of the signature
+        require(recoveredAddress != address(0) && recoveredAddress == order.signer, "!Signer");
+
+        // Verify whether order nonce has expired
+        require((order.nonce >= minNonce[order.signer]) && (!_isNonceExecutedOrCancelled[order.signer].get(order.nonce)), "!Nonce");
     }
 }

@@ -14,8 +14,7 @@ import { IERC4494 } from "../internal-upgradeable/interfaces/IERC4494.sol";
 import { PermitHelper } from "../libraries/PermitHelper.sol";
 
 contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
-    using AddressUpgradeable for address payable;
-    using AddressUpgradeable for address;
+    using AddressUpgradeable for *;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     address public constant NATIVE_TOKEN = address(0); // The address interpreted as native token of the chain.
@@ -34,7 +33,8 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
      * @param tokenId_ tokenId
      */
     function _transferNonFungibleToken(address collection_, address from_, address to_, uint256 tokenId_, uint256 deadline_, bytes calldata permitSignature_) internal {
-        if (permitSignature_.length > 0) PermitHelper.permit(collection_, tokenId_, deadline_, permitSignature_);
+        if (permitSignature_.length != 0) PermitHelper.permit(collection_, tokenId_, deadline_, permitSignature_);
+
         IERC721Upgradeable(collection_).safeTransferFrom(from_, to_, tokenId_);
         if (_safeOwnerOf(collection_, tokenId_) != to_) revert NotReceivedERC721();
     }
@@ -78,7 +78,7 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
     }
 
     function _safeOwnerOf(address token_, uint256 tokenId_) private view returns (address owner) {
-        (bool success, bytes memory data) = token_.staticcall(abi.encodeWithSelector(IERC721Upgradeable.ownerOf.selector, tokenId_));
+        (bool success, bytes memory data) = token_.staticcall(abi.encodeCall(IERC721Upgradeable.ownerOf, (tokenId_)));
         if (success) {
             owner = abi.decode(data, (address));
         }
@@ -88,7 +88,7 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
         if (token_ == NATIVE_TOKEN) {
             balance = address(account_).balance;
         } else {
-            (bool success, bytes memory data) = token_.staticcall(abi.encodeWithSelector(IERC20Upgradeable.balanceOf.selector, account_));
+            (bool success, bytes memory data) = token_.staticcall(abi.encodeCall(IERC20Upgradeable.balanceOf, (account_)));
             if (success) {
                 balance = abi.decode(data, (uint256));
             }

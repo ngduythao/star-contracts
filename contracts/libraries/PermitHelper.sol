@@ -24,14 +24,14 @@ library PermitHelper {
         }
     }
 
-    function _splitSignature(bytes memory signature) private pure returns (bytes32 r, bytes32 s, uint8 v) {
-        require(signature.length == 65, "invalid signature length");
+    function _splitSignature(bytes calldata signature_) private pure returns (bytes32 r, bytes32 s, uint8 v) {
+        require(signature_.length == 65, "invalid signature length");
 
         // solhint-disable no-inline-assembly
         assembly {
-            r := mload(add(signature, 0x20))
-            s := mload(add(signature, 0x40))
-            v := byte(0, mload(add(signature, 0x60)))
+            r := calldataload(signature_.offset)
+            s := calldataload(add(signature_.offset, 0x20))
+            v := byte(0, calldataload(add(signature_.offset, 0x40)))
         }
     }
 }
