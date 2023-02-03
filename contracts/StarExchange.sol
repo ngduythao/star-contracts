@@ -17,9 +17,9 @@ import { CurrencyManagerUpgradeable } from "./internal-upgradeable/CurrencyManag
 import { FeeManagerUpgradeable } from "./internal-upgradeable/FeeManagerUpgradeable.sol";
 
 // interfaces
-import { IERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import { IERC721Upgradeable } from "./internal-upgradeable/interfaces/IERC721Upgradeable.sol";
+import { IERC4494Upgradeable } from "./internal-upgradeable/interfaces/IERC4494Upgradeable.sol";
 import { IStarExchange } from "./interfaces/IStarExchange.sol";
-import { IERC4494 } from "./internal-upgradeable/interfaces/IERC4494.sol";
 
 // libraries
 import { OrderTypes } from "./libraries/OrderTypes.sol";

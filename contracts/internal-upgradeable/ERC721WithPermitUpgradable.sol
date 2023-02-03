@@ -6,12 +6,12 @@ import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC
 import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
 import { EIP712Upgradeable } from "./EIP712Upgradeable.sol";
-import { IERC4494 } from "./interfaces/IERC4494.sol";
+import { IERC4494Upgradeable } from "./interfaces/IERC4494Upgradeable.sol";
 
 /// @dev OpenZeppelin's ERC721Upgradeable extended with EIP-4494-compliant permits
 /// @notice Based on the reference implementation of the EIP-4494
 /// @notice See https://github.com/dievardump/erc721-with-permits and https://eips.ethereum.org/EIPS/eip-4494
-abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712Upgradeable, ERC721Upgradeable {
+abstract contract ERC721WithPermitUpgradable is IERC4494Upgradeable, Initializable, EIP712Upgradeable, ERC721Upgradeable {
     /// @dev value is equal to keccak256("Permit(address spender,uint256 tokenId,uint256 nonce,uint256 deadline)")
     bytes32 public constant PERMIT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
 
@@ -94,7 +94,7 @@ abstract contract ERC721WithPermitUpgradable is IERC4494, Initializable, EIP712U
     /// @return `true` if the contract implements `interfaceID` and
     ///  `interfaceID` is not 0xffffffff, `false` otherwise
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IERC4494).interfaceId || super.supportsInterface(interfaceId);
+        return interfaceId == type(IERC4494Upgradeable).interfaceId || super.supportsInterface(interfaceId);
     }
 
     // Reserved storage space to allow for layout changes in the future.

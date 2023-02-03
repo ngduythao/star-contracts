@@ -4,16 +4,16 @@ pragma solidity 0.8.18;
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { AddressUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import { IERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import { IERC20PermitUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-IERC20PermitUpgradeable.sol";
+import { IERC20PermitUpgradeable } from "./interfaces/IERC20PermitUpgradeable.sol";
+import { IERC4494Upgradeable } from "./interfaces/IERC4494Upgradeable.sol";
+import { IERC721Upgradeable } from "./interfaces/IERC721Upgradeable.sol";
 import { ICurrencyManager } from "./interfaces/ICurrencyManager.sol";
-import { IERC4494 } from "../internal-upgradeable/interfaces/IERC4494.sol";
-
 import { PermitHelper } from "../libraries/PermitHelper.sol";
 
 contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
+    using PermitHelper for address;
     using AddressUpgradeable for *;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -33,7 +33,7 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
      * @param tokenId_ tokenId
      */
     function _transferNonFungibleToken(address collection_, address from_, address to_, uint256 tokenId_, uint256 deadline_, bytes calldata permitSignature_) internal {
-        if (permitSignature_.length != 0) PermitHelper.permit(collection_, tokenId_, deadline_, permitSignature_);
+        if (permitSignature_.length != 0) collection_.permit(tokenId_, deadline_, permitSignature_);
 
         IERC721Upgradeable(collection_).safeTransferFrom(from_, to_, tokenId_);
         if (_safeOwnerOf(collection_, tokenId_) != to_) revert NotReceivedERC721();

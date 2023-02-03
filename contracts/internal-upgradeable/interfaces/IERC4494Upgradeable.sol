@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 /// @notice Based on the reference implementation of the EIP-4494
 /// @notice See https://github.com/dievardump/erc721-with-permits and https://eips.ethereum.org/EIPS/eip-4494
 /// @author Simon Fremaux (@dievardump) & William SchwabSchwab (@wschwab)
-interface IERC4494 {
+interface IERC4494Upgradeable {
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
     /// @notice Allows to retrieve current nonce for token

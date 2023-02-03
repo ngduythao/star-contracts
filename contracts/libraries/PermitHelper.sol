@@ -2,10 +2,10 @@
 pragma solidity 0.8.18;
 
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { IERC165Upgradeable } from "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol";
-import { IERC20PermitUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-IERC20PermitUpgradeable.sol";
-import { IERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-import { IERC4494 } from "../internal-upgradeable/interfaces/IERC4494.sol";
+import { IERC165Upgradeable } from "../internal-upgradeable/interfaces/IERC165Upgradeable.sol";
+import { IERC20PermitUpgradeable } from "../internal-upgradeable/interfaces/IERC20PermitUpgradeable.sol";
+import { IERC721Upgradeable } from "../internal-upgradeable/interfaces/IERC721Upgradeable.sol";
+import { IERC4494Upgradeable } from "../internal-upgradeable/interfaces/IERC4494Upgradeable.sol";
 
 /**
  * @title PermitHelper
@@ -17,7 +17,7 @@ library PermitHelper {
 
     function permit(address asset_, uint256 assetValue_, uint256 deadline_, bytes calldata permitSignature_) internal {
         if ((IERC165Upgradeable(asset_).supportsInterface(INTERFACE_ID_ERC721))) {
-            IERC4494(asset_).permit(address(this), assetValue_, deadline_, permitSignature_);
+            IERC4494Upgradeable(asset_).permit(address(this), assetValue_, deadline_, permitSignature_);
         } else {
             (bytes32 r, bytes32 s, uint8 v) = _splitSignature(permitSignature_);
             IERC20PermitUpgradeable(asset_).permit(msg.sender, address(this), assetValue_, deadline_, v, r, s);
