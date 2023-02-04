@@ -65,16 +65,16 @@ contract StarClaim is
         uint256 length = order_.tokens.length;
         bytes32 orderHash = order_.hash();
         address sender = _msgSender();
-        uint256 nonce = _nonces[sender] + 1;
+        uint256 nextNonce = _nonces[sender] + 1;
 
         //solhint-disable-next-line avoid-tx-origin
         if (sender != order_.user || sender != tx.origin || sender.code.length != 0) revert InvalidSender();
         if (length != order_.amounts.length) revert LengthMismatch();
         if (order_.deadline < block.timestamp) revert ExpiredSignature();
-        if (order_.nonce != nonce) revert InvalidNonce();
+        if (order_.nonce != nextNonce) revert InvalidNonce();
 
         // prevents replay
-        _nonces[sender] = nonce;
+        _nonces[sender] = nextNonce;
         _validateSignatures(orderHash, signatures_);
 
         for (uint256 i = 0; i < length; ) {
@@ -90,7 +90,7 @@ contract StarClaim is
     /// @notice Allows to retrieve current nonce for token
     /// @param account_ user adddress
     /// @return next account nonce
-    function nextNonce(address account_) external view returns (uint256) {
+    function nonce(address account_) external view returns (uint256) {
         return _nonces[account_] + 1;
     }
 

@@ -12,7 +12,7 @@ interface IStarClaim {
         bytes32 s;
     }
 
-    function nextNonce(address account_) external view returns (uint256);
+    function nonce(address account_) external view returns (uint256);
 
     function claim(ClaimTypes.Claim calldata order_, Signature[] calldata signs_) external;
 
