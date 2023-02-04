@@ -29,15 +29,15 @@ contract StarNFT is
     using BitMapsUpgradeable for BitMapsUpgradeable.BitMap;
 
     /// @dev value is equal to keccak256("OPERATOR_ROLE")
-    bytes32 public constant OPERATOR_ROLE = 0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    bytes32 private constant OPERATOR_ROLE = 0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
     /// @dev value is equal to keccak256("MINTER_ROLE")
-    bytes32 public constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
+    bytes32 private constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
     /// @dev value is equal to keccak256("UPGRADER_ROLE")
-    bytes32 public constant UPGRADER_ROLE = 0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
+    bytes32 private constant UPGRADER_ROLE = 0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
     /// @dev value is equal to keccak256("Metadata(string name)")
-    bytes32 public constant METADATA_TYPEHASH = 0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
+    bytes32 private constant METADATA_TYPEHASH = 0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
     /// @dev value is equal to keccak256("Store(uint256 uid,address account,Metadata metadata)Metadata(string name)")
-    bytes32 public constant STORE_TYPEHASH = 0x846c0ba6933a8d5c76907555263138af551c266efcf9b26fa6b0634d2aa419a2;
+    bytes32 private constant STORE_TYPEHASH = 0x846c0ba6933a8d5c76907555263138af551c266efcf9b26fa6b0634d2aa419a2;
 
     address public treasury;
     uint256 private constant CHAIN_ID_SLOT = 3;

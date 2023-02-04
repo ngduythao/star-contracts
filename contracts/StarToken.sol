@@ -12,9 +12,9 @@ import { Lockable } from "./internal/Lockable.sol";
 
 contract SToken is IStarToken, AccessControl, Pausable, ERC20, ERC20Burnable, ERC20Permit, Lockable {
     /// @dev value is equal to keccak256("OPERATOR_ROLE")
-    bytes32 public constant OPERATOR_ROLE = 0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    bytes32 private constant OPERATOR_ROLE = 0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
     /// @dev value is equal to keccak256("MINTER_ROLE")
-    bytes32 public constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
+    bytes32 private constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
 
     constructor() payable Pausable() ERC20("SToken", "S") ERC20Permit("StarToken") {
         address sender = _msgSender();
