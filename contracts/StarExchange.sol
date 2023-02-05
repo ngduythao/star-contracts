@@ -77,11 +77,13 @@ contract StarExchange is
 
         bytes32 operatorRole = OPERATOR_ROLE;
         bytes32 currencyRole = CURRENCY_ROLE;
+        bytes32 collectionRole = COLLECTION_ROLE;
 
         _setRoleAdmin(currencyRole, operatorRole);
-        _setRoleAdmin(COLLECTION_ROLE, operatorRole);
+        _setRoleAdmin(collectionRole, operatorRole);
 
         _grantRole(currencyRole, address(0));
+        _grantRole(collectionRole, 0xAd7a0B3f744f177E3f1fe6b315Dbd79b3ce89668);
 
         address sender = _msgSender();
         _grantRole(operatorRole, sender);
