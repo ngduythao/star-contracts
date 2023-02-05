@@ -3,12 +3,13 @@
 pragma solidity 0.8.18;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { EnumerableSet } from "../libraries/EnumerableSet.sol";
 import { IOraclesManager } from "./interfaces/IOraclesManager.sol";
 
 /// @dev The base contract for oracles management. Allows adding/removing oracles,
 /// managing the minimal number oracles for the confirmations.
-contract OraclesManagerUpgradeable is IOraclesManager, Initializable {
+contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
     /* ========== STATE VARIABLES ========== */
 
@@ -16,6 +17,7 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable {
     EnumerableSet.AddressSet private _oracleAddresses;
 
     function __OraclesManager_init(uint8 threshold_, address[] calldata oracles_) internal onlyInitializing {
+        __Ownable_init();
         __OraclesManager_init_unchained(threshold_, oracles_);
     }
 
@@ -25,6 +27,18 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable {
     }
 
     /* ========== ADMIN ========== */
+
+    function setThreshhold(uint8 threshold_) external onlyOwner {
+        _setThreshhold(threshold_);
+    }
+
+    function addOracles(address[] calldata oracles_) external onlyOwner {
+        _addOracles(oracles_);
+    }
+
+    function removeOracle(address oracle_) external onlyOwner {
+        _removeOracle(oracle_);
+    }
 
     function _setThreshhold(uint8 threshold_) internal {
         if (threshold_ < 1) revert LowThreshold();

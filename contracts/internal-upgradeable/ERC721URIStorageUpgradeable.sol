@@ -14,11 +14,11 @@ abstract contract ERC721URIStorageUpgradeable is Initializable, ERC721Upgradeabl
 
     string internal _baseUri;
 
-    function __ERC721URIStorage_init(string memory baseUri_) internal onlyInitializing {
+    function __ERC721URIStorage_init(string calldata baseUri_) internal onlyInitializing {
         __ERC721URIStorage_init_unchained(baseUri_);
     }
 
-    function __ERC721URIStorage_init_unchained(string memory baseUri_) internal onlyInitializing {
+    function __ERC721URIStorage_init_unchained(string calldata baseUri_) internal onlyInitializing {
         _setBaseURI(baseUri_);
     }
 
@@ -41,7 +41,7 @@ abstract contract ERC721URIStorageUpgradeable is Initializable, ERC721Upgradeabl
         return bytes(baseUri).length > 0 ? string(abi.encodePacked(baseUri, tokenId.toString())) : "";
     }
 
-    function _setBaseURI(string memory baseUri_) internal virtual {
+    function _setBaseURI(string calldata baseUri_) internal virtual {
         _baseUri = baseUri_;
     }
 

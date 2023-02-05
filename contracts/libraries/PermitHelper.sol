@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC165Upgradeable } from "../internal-upgradeable/interfaces/IERC165Upgradeable.sol";
 import { IERC20PermitUpgradeable } from "../internal-upgradeable/interfaces/IERC20PermitUpgradeable.sol";
-import { IERC721Upgradeable } from "../internal-upgradeable/interfaces/IERC721Upgradeable.sol";
 import { IERC4494Upgradeable } from "../internal-upgradeable/interfaces/IERC4494Upgradeable.sol";
 
 /**
@@ -25,7 +23,7 @@ library PermitHelper {
     }
 
     function _splitSignature(bytes calldata signature_) private pure returns (bytes32 r, bytes32 s, uint8 v) {
-        require(signature_.length == 65, "invalid signature length");
+        require(signature_.length == 65, "!SIGN_LEN");
 
         // solhint-disable no-inline-assembly
         assembly {

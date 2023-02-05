@@ -29,9 +29,9 @@ interface IStarNFT {
 
     function unpause() external;
 
-    function setBaseURI(string memory uri_) external;
+    function setBaseURI(string calldata uri_) external;
 
     function exists(uint256 tokenId_) external view returns (bool);
 
-    function setMetadata(uint256 tokenId_, Metadata memory metadatas_) external;
+    function setMetadata(uint256 tokenId_, Metadata calldata metadatas_) external;
 }

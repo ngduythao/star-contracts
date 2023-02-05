@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.7;
+pragma solidity 0.8.18;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
@@ -17,7 +17,7 @@ abstract contract ERC721WithPermitUpgradable is IERC4494Upgradeable, Initializab
 
     mapping(uint256 => uint256) private _nonces;
 
-    function __ERC721WithPermitUpgradable_init(string memory name_, string memory symbol_) internal initializer {
+    function __ERC721WithPermitUpgradable_init(string calldata name_, string calldata symbol_) internal initializer {
         __ERC721_init(name_, symbol_);
         __ERC721WithPermitUpgradable_init_unchained();
     }

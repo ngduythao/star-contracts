@@ -14,7 +14,7 @@ interface IStarClaim {
 
     function nonce(address account_) external view returns (uint256);
 
-    function claim(ClaimTypes.Claim calldata order_, Signature[] calldata signs_) external;
+    function claim(ClaimTypes.Claim calldata claim_, Signature[] calldata signs_) external;
 
     /* ========== ERRORS ========== */
     error InvalidSender();

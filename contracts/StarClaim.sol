@@ -5,10 +5,9 @@ pragma solidity 0.8.18;
 // external
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
 // internal
 import { EIP712Upgradeable } from "./internal-upgradeable/EIP712Upgradeable.sol";
@@ -25,17 +24,7 @@ import { ClaimTypes } from "./libraries/ClaimTypes.sol";
  * @title Star Claim
  */
 
-contract StarClaim is
-    IStarClaim,
-    Initializable,
-    UUPSUpgradeable,
-    PausableUpgradeable,
-    AccessControlUpgradeable,
-    CurrencyManagerUpgradeable,
-    OraclesManagerUpgradeable,
-    ReentrancyGuardUpgradeable,
-    EIP712Upgradeable
-{
+contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgradeable, CurrencyManagerUpgradeable, OraclesManagerUpgradeable, ReentrancyGuardUpgradeable, EIP712Upgradeable {
     using ClaimTypes for ClaimTypes.Claim;
 
     /// @dev value is equal to keccak256("VALIDATOR_ROLE")
@@ -55,39 +44,35 @@ contract StarClaim is
         __ReentrancyGuard_init_unchained();
         __EIP712_init_unchained(name_, version_);
         __OraclesManager_init_unchained(threshold_, oracles_);
-
-        address sender = _msgSender();
-        _grantRole(UPGRADER_ROLE, sender);
-        _grantRole(DEFAULT_ADMIN_ROLE, sender);
     }
 
-    function claim(ClaimTypes.Claim calldata order_, Signature[] calldata signatures_) external nonReentrant {
-        uint256 length = order_.tokens.length;
-        bytes32 orderHash = order_.hash();
+    function claim(ClaimTypes.Claim calldata claim_, Signature[] calldata signatures_) external nonReentrant {
+        uint256 length = claim_.tokens.length;
+        bytes32 claimHash = claim_.hash();
         address sender = _msgSender();
         uint256 nextNonce = _nonces[sender] + 1;
 
         //solhint-disable-next-line avoid-tx-origin
-        if (sender != order_.user || sender != tx.origin || sender.code.length != 0) revert InvalidSender();
-        if (length != order_.amounts.length) revert LengthMismatch();
-        if (order_.deadline < block.timestamp) revert ExpiredSignature();
-        if (order_.nonce != nextNonce) revert InvalidNonce();
+        if (sender != claim_.user || sender != tx.origin || sender.code.length != 0) revert InvalidSender();
+        if (length != claim_.amounts.length) revert LengthMismatch();
+        if (claim_.deadline < block.timestamp) revert ExpiredSignature();
+        if (claim_.nonce != nextNonce) revert InvalidNonce();
 
         // prevents replay
         _nonces[sender] = nextNonce;
-        _validateSignatures(orderHash, signatures_);
+        _validateSignatures(claimHash, signatures_);
 
         for (uint256 i = 0; i < length; ) {
-            _transferCurrency(order_.tokens[i], address(this), sender, order_.amounts[i]);
+            _transferCurrency(claim_.tokens[i], address(this), sender, claim_.amounts[i]);
             unchecked {
                 ++i;
             }
         }
 
-        emit Claim(sender, orderHash);
+        emit Claim(sender, claimHash);
     }
 
-    /// @notice Allows to retrieve current nonce for token
+    /// @notice Allows to retrieve next nonce for the claim
     /// @param account_ user adddress
     /// @return next account nonce
     function nonce(address account_) external view returns (uint256) {
@@ -95,9 +80,9 @@ contract StarClaim is
     }
 
     /* solhint-disable no-empty-blocks */
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    function _validateSignatures(bytes32 orderHash_, Signature[] calldata signs_) private view {
+    function _validateSignatures(bytes32 claimHash_, Signature[] calldata signs_) private view {
         uint8 neededConfirmations = _threshHold;
         uint256 length = signs_.length;
 
@@ -106,7 +91,7 @@ contract StarClaim is
         address[] memory oracles = new address[](_viewCountOracles() + 1); // reserve index 0 for invalid signer
 
         for (uint256 i = 0; i < length; ) {
-            (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(_hashTypedDataV4(orderHash_), signs_[i].v, signs_[i].r, signs_[i].s);
+            (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(_hashTypedDataV4(claimHash_), signs_[i].v, signs_[i].r, signs_[i].s);
             uint256 index = _indexOf(recoveredAddress);
 
             if (!_isValidOracle(recoveredAddress)) revert InvalidOracle();

@@ -20,7 +20,6 @@ contract SToken is IStarToken, AccessControl, Pausable, ERC20, ERC20Burnable, ER
         address sender = _msgSender();
         _grantRole(DEFAULT_ADMIN_ROLE, sender);
         _grantRole(MINTER_ROLE, sender);
-        //_grantRole(MINTER_ROLE, sender);
         _mint(sender, 1_000_000 ether);
     }
 
