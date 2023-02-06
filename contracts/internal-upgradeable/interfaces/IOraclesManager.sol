@@ -38,8 +38,6 @@ interface IOraclesManager {
 
     /**
      * @notice See the list of oracles in the system
-     * @param cursor cursor (should start at 0 for first request)
-     * @param size size of the response (e.g., 50)
      */
-    function viewOracles(uint256 cursor, uint256 size) external view returns (address[] memory, uint256);
+    function viewOracles() external view returns (address[] memory, uint256);
 }

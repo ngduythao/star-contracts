@@ -51,15 +51,17 @@ contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgrad
         bytes32 claimHash = claim_.hash();
         address sender = _msgSender();
 
-        //solhint-disable-next-line avoid-tx-origin
         if (claim_.deadline < block.timestamp) revert ExpiredSignature();
-        if (sender != tx.origin || sender != claim_.user || sender.code.length != 0) revert InvalidSender();
         if (length != claim_.amounts.length) revert LengthMismatch();
+
+        //solhint-disable-next-line avoid-tx-origin
+        if (sender != tx.origin || sender != claim_.user || sender.code.length != 0) revert InvalidSender();
+
+        // prevents replay
         unchecked {
             if (claim_.nonce != ++_nonces[sender]) revert InvalidNonce();
         }
 
-        // prevents replay
         _validateSignatures(claimHash, signatures_);
 
         for (uint256 i; i < length; ) {

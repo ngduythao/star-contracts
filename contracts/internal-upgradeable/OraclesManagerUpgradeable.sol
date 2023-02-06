@@ -79,18 +79,18 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
         return _viewCountOracles();
     }
 
-    function viewOracles(uint256 cursor_, uint256) external view override returns (address[] memory, uint256) {
+    function viewOracles() external view override returns (address[] memory, uint256) {
         uint256 length = _oracleAddresses.length();
         address[] memory oracleAddresses = new address[](length);
         for (uint256 i; i < length; ) {
             unchecked {
-                oracleAddresses[i] = _oracleAddresses.at(cursor_ + i);
+                oracleAddresses[i] = _oracleAddresses.at(i);
                 ++i;
             }
         }
 
         unchecked {
-            return (oracleAddresses, cursor_ + length);
+            return (oracleAddresses, length);
         }
     }
 
