@@ -171,7 +171,8 @@ contract StarNFT is
     }
 
     function _setTreasury(address treasury_) internal {
-        if (address(treasury_) == address(0)) revert ZeroAddress();
+        if (treasury_ == address(0) || treasury_ == address(this)) revert ZeroAddress();
+
         emit TreasuryUpdated(treasury, treasury_);
         treasury = treasury_;
     }

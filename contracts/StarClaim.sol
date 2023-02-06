@@ -50,19 +50,19 @@ contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgrad
         uint256 length = claim_.tokens.length;
         bytes32 claimHash = claim_.hash();
         address sender = _msgSender();
-        uint256 nextNonce = _nonces[sender] + 1;
 
         //solhint-disable-next-line avoid-tx-origin
-        if (sender != claim_.user || sender != tx.origin || sender.code.length != 0) revert InvalidSender();
-        if (length != claim_.amounts.length) revert LengthMismatch();
         if (claim_.deadline < block.timestamp) revert ExpiredSignature();
-        if (claim_.nonce != nextNonce) revert InvalidNonce();
+        if (sender != tx.origin || sender != claim_.user || sender.code.length != 0) revert InvalidSender();
+        if (length != claim_.amounts.length) revert LengthMismatch();
+        unchecked {
+            if (claim_.nonce != ++_nonces[sender]) revert InvalidNonce();
+        }
 
         // prevents replay
-        _nonces[sender] = nextNonce;
         _validateSignatures(claimHash, signatures_);
 
-        for (uint256 i = 0; i < length; ) {
+        for (uint256 i; i < length; ) {
             _transferCurrency(claim_.tokens[i], address(this), sender, claim_.amounts[i]);
             unchecked {
                 ++i;
@@ -76,29 +76,34 @@ contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgrad
     /// @param account_ user adddress
     /// @return next account nonce
     function nonce(address account_) external view returns (uint256) {
-        return _nonces[account_] + 1;
+        unchecked {
+            return _nonces[account_] + 1;
+        }
     }
 
     /* solhint-disable no-empty-blocks */
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     function _validateSignatures(bytes32 claimHash_, Signature[] calldata signs_) private view {
-        uint8 neededConfirmations = _threshHold;
         uint256 length = signs_.length;
+        if (length < _threshHold) revert NotEnoughOracles();
 
-        if (length < neededConfirmations) revert NotEnoughOracles();
-
-        address[] memory oracles = new address[](_viewCountOracles() + 1); // reserve index 0 for invalid signer
-
-        for (uint256 i = 0; i < length; ) {
-            (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(_hashTypedDataV4(claimHash_), signs_[i].v, signs_[i].r, signs_[i].s);
-            uint256 index = _indexOf(recoveredAddress);
-
+        address[] memory oracles;
+        unchecked {
+            oracles = new address[](_viewCountOracles() + 1);
+        }
+        // reserve index 0 for invalid signer
+        address recoveredAddress;
+        uint256 index;
+        bytes32 digest = _hashTypedDataV4(claimHash_);
+        for (uint256 i; i < length; ) {
+            (recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signs_[i].v, signs_[i].r, signs_[i].s);
             if (!_isValidOracle(recoveredAddress)) revert InvalidOracle();
 
+            index = _indexOf(recoveredAddress);
             if (oracles[index] != address(0)) revert DuplicateSignatures();
-
             oracles[index] = recoveredAddress;
+
             unchecked {
                 ++i;
             }

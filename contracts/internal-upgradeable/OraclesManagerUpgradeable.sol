@@ -17,7 +17,7 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
     EnumerableSet.AddressSet private _oracleAddresses;
 
     function __OraclesManager_init(uint8 threshold_, address[] calldata oracles_) internal onlyInitializing {
-        __Ownable_init();
+        __Ownable_init_unchained();
         __OraclesManager_init_unchained(threshold_, oracles_);
     }
 
@@ -48,7 +48,7 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
     function _addOracles(address[] calldata oracles_) internal {
         uint256 length = oracles_.length;
 
-        for (uint256 i = 0; i < length; ) {
+        for (uint256 i; i < length; ) {
             if (_oracleAddresses.contains(oracles_[i])) revert OracleAlreadyExist();
             _oracleAddresses.add(oracles_[i]);
 
@@ -79,22 +79,19 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
         return _viewCountOracles();
     }
 
-    function viewOracles(uint256 cursor_, uint256 size_) external view override returns (address[] memory, uint256) {
+    function viewOracles(uint256 cursor_, uint256) external view override returns (address[] memory, uint256) {
         uint256 length = _oracleAddresses.length();
-        uint256 size = size_;
-
-        if (size > length - cursor_) size = length - cursor_;
-
         address[] memory oracleAddresses = new address[](length);
-
-        for (uint256 i = 0; i < length; ) {
-            oracleAddresses[i] = _oracleAddresses.at(cursor_ + i);
+        for (uint256 i; i < length; ) {
             unchecked {
+                oracleAddresses[i] = _oracleAddresses.at(cursor_ + i);
                 ++i;
             }
         }
 
-        return (oracleAddresses, cursor_ + length);
+        unchecked {
+            return (oracleAddresses, cursor_ + length);
+        }
     }
 
     function _viewCountOracles() internal view returns (uint256) {
