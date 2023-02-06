@@ -27,11 +27,6 @@ import { ClaimTypes } from "./libraries/ClaimTypes.sol";
 contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgradeable, CurrencyManagerUpgradeable, OraclesManagerUpgradeable, ReentrancyGuardUpgradeable, EIP712Upgradeable {
     using ClaimTypes for ClaimTypes.Claim;
 
-    /// @dev value is equal to keccak256("VALIDATOR_ROLE")
-    bytes32 private constant VALIDATOR_ROLE = 0x21702c8af46127c7fa207f89d0b0a8441bb32959a0ac7df790e9ab1a25c98926;
-    /// @dev value is equal to keccak256("UPGRADER_ROLE")
-    bytes32 private constant UPGRADER_ROLE = 0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
-
     mapping(address => uint256) private _nonces;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -46,7 +41,7 @@ contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgrad
         __OraclesManager_init_unchained(threshold_, oracles_);
     }
 
-    function claim(ClaimTypes.Claim calldata claim_, Signature[] calldata signatures_) external nonReentrant {
+    function claim(ClaimTypes.Claim calldata claim_, Signature[] calldata signatures_) external whenNotPaused nonReentrant {
         uint256 length = claim_.tokens.length;
         bytes32 claimHash = claim_.hash();
         address sender = _msgSender();
