@@ -41,7 +41,7 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
     }
 
     function _setThreshhold(uint8 threshold_) internal {
-        if (threshold_ < 1) revert LowThreshold();
+        if (threshold_ == 0) revert LowThreshold();
         _threshHold = threshold_;
     }
 
@@ -83,15 +83,13 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
         uint256 length = _oracleAddresses.length();
         address[] memory oracleAddresses = new address[](length);
         for (uint256 i; i < length; ) {
+            oracleAddresses[i] = _oracleAddresses.at(i);
             unchecked {
-                oracleAddresses[i] = _oracleAddresses.at(i);
                 ++i;
             }
         }
 
-        unchecked {
-            return (oracleAddresses, length);
-        }
+        return (oracleAddresses, length);
     }
 
     function _viewCountOracles() internal view returns (uint256) {

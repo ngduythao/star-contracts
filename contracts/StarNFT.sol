@@ -144,7 +144,7 @@ contract StarNFT is
         emit Registered(uid_, account_, tokenId, metadata_);
 
         unchecked {
-            _idCounter = tokenId + 1;
+            ++_idCounter;
         }
     }
 
