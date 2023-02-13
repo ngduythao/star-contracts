@@ -17,11 +17,11 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
     EnumerableSet.AddressSet private _oracleAddresses;
 
     function __OraclesManager_init(uint8 threshold_, address[] calldata oracles_) internal onlyInitializing {
-        __Ownable_init_unchained();
         __OraclesManager_init_unchained(threshold_, oracles_);
     }
 
     function __OraclesManager_init_unchained(uint8 threshold_, address[] calldata oracles_) internal onlyInitializing {
+        __Ownable_init_unchained();
         _setThreshhold(threshold_);
         _addOracles(oracles_);
     }

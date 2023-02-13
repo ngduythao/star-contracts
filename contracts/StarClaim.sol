@@ -38,7 +38,7 @@ contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgrad
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();
         __EIP712_init_unchained(name_, version_);
-        __OraclesManager_init_unchained(threshold_, oracles_);
+        __OraclesManager_init(threshold_, oracles_);
     }
 
     function claim(ClaimTypes.Claim calldata claim_, Signature[] calldata signatures_) external whenNotPaused nonReentrant {

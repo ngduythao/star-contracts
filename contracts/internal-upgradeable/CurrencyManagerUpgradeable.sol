@@ -43,7 +43,7 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
     function _receiveNative(uint256 amount_) internal {
         uint256 nativeValue = msg.value;
         require(nativeValue >= amount_, "!Balance");
-        if (nativeValue > amount_) _safeTransferNativeToken(msg.sender, amount_ - nativeValue);
+        if (nativeValue > amount_) _safeTransferNativeToken(msg.sender, nativeValue - amount_);
     }
 
     /// @dev Transfers a given amount of currency.
