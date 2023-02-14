@@ -3,6 +3,9 @@ pragma solidity 0.8.18;
 
 import { Initializable } from "oz-custom/contracts/oz-upgradeable/proxy/utils/Initializable.sol";
 import {
+    UUPSUpgradeable
+} from "oz-custom/contracts/oz-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
     PausableUpgradeable
 } from "oz-custom/contracts/oz-upgradeable/security/PausableUpgradeable.sol";
 import {
@@ -147,6 +150,7 @@ library AuctionLib {
 contract Auction is
     IAuction,
     Initializable,
+    UUPSUpgradeable,
     PausableUpgradeable,
     SignableUpgradeable,
     TransferableUpgradeable,
@@ -162,6 +166,9 @@ contract Auction is
     /// @dev value is equal to keccak256("OPERATOR_ROLE")
     bytes32 private constant OPERATOR_ROLE =
         0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    /// @dev value is equal to keccak256("UPGRADER_ROLE")
+    bytes32 private constant UPGRADER_ROLE =
+        0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
 
     IWNT public wnt;
 
@@ -170,17 +177,24 @@ contract Auction is
         _;
     }
 
-    function initialize(IWNT wnt_, address[] calldata operators_) external initializer {
+    function initialize(
+        IWNT wnt_,
+        address admin_,
+        address[] calldata operators_
+    ) external initializer {
         __Pausable_init_unchained();
-        __Auction_init_unchained(wnt_, operators_);
         __Signable_init_unchained(type(Auction).name, "1");
+        __Auction_init_unchained(wnt_, admin_, operators_);
     }
 
     function __Auction_init_unchained(
         IWNT wnt_,
+        address admin_,
         address[] calldata operators_
     ) internal virtual onlyInitializing {
         wnt = wnt_;
+
+        _grantRole(DEFAULT_ADMIN_ROLE, admin_);
 
         uint256 length = operators_.length;
         bytes32 operatorRole = OPERATOR_ROLE;
@@ -331,6 +345,11 @@ contract Auction is
     function _checkBlacklist(address account_) internal view virtual {
         if (isBlacklisted(account_)) revert Auction__Blacklisted();
     }
+
+    /* solhint-disable no-empty-blocks */
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(UPGRADER_ROLE) {}
 
     uint256[49] private __gap;
 }
