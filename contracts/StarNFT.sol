@@ -2,16 +2,34 @@
 pragma solidity 0.8.18;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { BitMapsUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/BitMapsUpgradeable.sol";
-import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import {
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+    AccessControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {
+    BitMapsUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/structs/BitMapsUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {
+    ECDSAUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
-import { ERC721Upgradeable, ERC721EnumerableUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import { ERC721URIStorageUpgradeable } from "./internal-upgradeable/ERC721URIStorageUpgradeable.sol";
+import {
+    ERC721Upgradeable,
+    ERC721EnumerableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import {
+    ERC721URIStorageUpgradeable
+} from "./internal-upgradeable/ERC721URIStorageUpgradeable.sol";
 import { ERC721BurnableUpgradeable } from "./internal-upgradeable/ERC721BurnableUpgradeable.sol";
-import { EIP712Upgradeable, ERC721WithPermitUpgradable } from "./internal-upgradeable/ERC721WithPermitUpgradable.sol";
+import {
+    EIP712Upgradeable,
+    ERC721WithPermitUpgradable
+} from "./internal-upgradeable/ERC721WithPermitUpgradable.sol";
 import { CurrencyManagerUpgradeable } from "./internal-upgradeable/CurrencyManagerUpgradeable.sol";
 import { IStarNFT } from "./interfaces/IStarNFT.sol";
 
@@ -29,15 +47,20 @@ contract StarNFT is
     using BitMapsUpgradeable for BitMapsUpgradeable.BitMap;
 
     /// @dev value is equal to keccak256("OPERATOR_ROLE")
-    bytes32 private constant OPERATOR_ROLE = 0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    bytes32 private constant OPERATOR_ROLE =
+        0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
     /// @dev value is equal to keccak256("MINTER_ROLE")
-    bytes32 private constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
+    bytes32 private constant MINTER_ROLE =
+        0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
     /// @dev value is equal to keccak256("UPGRADER_ROLE")
-    bytes32 private constant UPGRADER_ROLE = 0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
+    bytes32 private constant UPGRADER_ROLE =
+        0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
     /// @dev value is equal to keccak256("Metadata(string name)")
-    bytes32 private constant METADATA_TYPEHASH = 0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
+    bytes32 private constant METADATA_TYPEHASH =
+        0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
     /// @dev value is equal to keccak256("Store(uint256 uid,address account,Metadata metadata)Metadata(string name)")
-    bytes32 private constant STORE_TYPEHASH = 0x846c0ba6933a8d5c76907555263138af551c266efcf9b26fa6b0634d2aa419a2;
+    bytes32 private constant STORE_TYPEHASH =
+        0x846c0ba6933a8d5c76907555263138af551c266efcf9b26fa6b0634d2aa419a2;
 
     address public treasury;
     uint256 private constant CHAIN_ID_SLOT = 3;
@@ -52,7 +75,13 @@ contract StarNFT is
         _disableInitializers();
     }
 
-    function initialize(string calldata name_, string calldata symbol_, string calldata version_, string calldata baseUri_, uint256 chainIdentity_) external initializer {
+    function initialize(
+        string calldata name_,
+        string calldata symbol_,
+        string calldata version_,
+        string calldata baseUri_,
+        uint256 chainIdentity_
+    ) external initializer {
         __Pausable_init_unchained();
         __EIP712_init_unchained(name_, version_);
         __ERC721URIStorage_init_unchained(baseUri_);
@@ -95,14 +124,23 @@ contract StarNFT is
         _createStore(store_.uid, store_.account, store_.metadata);
     }
 
-    function createStore(Store calldata store_, address paymentToken_, bytes calldata signature_) external {
+    function createStore(
+        Store calldata store_,
+        address paymentToken_,
+        bytes calldata signature_
+    ) external {
         uint256 amount = _paymentAmount[paymentToken_];
         require(amount > 0, "!TOKEN");
 
-        bytes32 structHash = keccak256(abi.encode(STORE_TYPEHASH, store_.uid, store_.account, _hashMetadata(store_.metadata)));
+        bytes32 structHash = keccak256(
+            abi.encode(STORE_TYPEHASH, store_.uid, store_.account, _hashMetadata(store_.metadata))
+        );
         bytes32 digest = _hashTypedDataV4(structHash);
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
-        require((recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)), "!SIG");
+        require(
+            (recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)),
+            "!SIG"
+        );
         _transferCurrency(paymentToken_, _msgSender(), treasury, amount);
         _createStore(store_.uid, store_.account, store_.metadata);
     }
@@ -153,20 +191,36 @@ contract StarNFT is
         _isUsed.set(uid_);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) whenNotPaused {
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 batchSize
+    ) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) whenNotPaused {
         super._beforeTokenTransfer(from, to, tokenId, batchSize);
     }
 
     /* solhint-disable no-empty-blocks */
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(UPGRADER_ROLE) {}
 
     // The following functions are overrides required by Solidity.
 
-    function _transfer(address from_, address to_, uint256 tokenId_) internal override(ERC721Upgradeable, ERC721WithPermitUpgradable) {
+    function _transfer(
+        address from_,
+        address to_,
+        uint256 tokenId_
+    ) internal override(ERC721Upgradeable, ERC721WithPermitUpgradable) {
         super._transfer(from_, to_, tokenId_);
     }
 
-    function _baseURI() internal view override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
+    function _baseURI()
+        internal
+        view
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (string memory)
+    {
         return _baseUri;
     }
 
@@ -177,11 +231,30 @@ contract StarNFT is
         treasury = treasury_;
     }
 
-    function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
+    function tokenURI(
+        uint256 tokenId
+    )
+        public
+        view
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (string memory)
+    {
         return super.tokenURI(tokenId);
     }
 
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721WithPermitUpgradable, AccessControlUpgradeable) returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    )
+        public
+        view
+        override(
+            ERC721Upgradeable,
+            ERC721EnumerableUpgradeable,
+            ERC721WithPermitUpgradable,
+            AccessControlUpgradeable
+        )
+        returns (bool)
+    {
         return super.supportsInterface(interfaceId);
     }
 

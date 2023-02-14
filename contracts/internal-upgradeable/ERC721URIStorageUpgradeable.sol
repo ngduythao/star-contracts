@@ -3,7 +3,10 @@
 
 pragma solidity 0.8.18;
 
-import { ERC721Upgradeable, StringsUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import {
+    ERC721Upgradeable,
+    StringsUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
@@ -18,7 +21,9 @@ abstract contract ERC721URIStorageUpgradeable is Initializable, ERC721Upgradeabl
         __ERC721URIStorage_init_unchained(baseUri_);
     }
 
-    function __ERC721URIStorage_init_unchained(string calldata baseUri_) internal onlyInitializing {
+    function __ERC721URIStorage_init_unchained(
+        string calldata baseUri_
+    ) internal onlyInitializing {
         _setBaseURI(baseUri_);
     }
 
@@ -38,7 +43,8 @@ abstract contract ERC721URIStorageUpgradeable is Initializable, ERC721Upgradeabl
 
         string memory baseUri = _baseUri;
 
-        return bytes(baseUri).length > 0 ? string(abi.encodePacked(baseUri, tokenId.toString())) : "";
+        return
+            bytes(baseUri).length > 0 ? string(abi.encodePacked(baseUri, tokenId.toString())) : "";
     }
 
     function _setBaseURI(string calldata baseUri_) internal virtual {

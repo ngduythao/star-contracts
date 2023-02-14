@@ -4,12 +4,24 @@ pragma solidity 0.8.18;
 
 // external
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { BitMapsUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/BitMapsUpgradeable.sol";
-import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
-import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+    AccessControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {
+    BitMapsUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/structs/BitMapsUpgradeable.sol";
+import {
+    ECDSAUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {
+    ReentrancyGuardUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 // internal
 import { EIP712Upgradeable } from "./internal-upgradeable/EIP712Upgradeable.sol";
@@ -54,13 +66,17 @@ contract StarExchange is
     using OrderTypes for OrderTypes.SellerOrder;
 
     /// @dev value is equal to keccak256("OPERATOR_ROLE")
-    bytes32 private constant OPERATOR_ROLE = 0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
+    bytes32 private constant OPERATOR_ROLE =
+        0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929;
     /// @dev value is equal to keccak256("UPGRADER_ROLE")
-    bytes32 private constant UPGRADER_ROLE = 0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
+    bytes32 private constant UPGRADER_ROLE =
+        0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
     /// @dev value is equal to keccak256("CURRENCY_ROLE")
-    bytes32 private constant CURRENCY_ROLE = 0xf05d08f52b65664f2d8334187e35158d45f068d9d83ac572adc3840604b088aa;
+    bytes32 private constant CURRENCY_ROLE =
+        0xf05d08f52b65664f2d8334187e35158d45f068d9d83ac572adc3840604b088aa;
     /// @dev value is equal to keccak256("COLLECTION_ROLE")
-    bytes32 private constant COLLECTION_ROLE = 0x40a5c770eee7730548a6335e1f372e76bf4759f6fda1a932bd9cfc33106f0b4c;
+    bytes32 private constant COLLECTION_ROLE =
+        0x40a5c770eee7730548a6335e1f372e76bf4759f6fda1a932bd9cfc33106f0b4c;
 
     mapping(address => uint256) public minNonce;
     mapping(address => BitMapsUpgradeable.BitMap) private _isNonceExecutedOrCancelled;
@@ -70,7 +86,7 @@ contract StarExchange is
         _disableInitializers();
     }
 
-    function initialize(string calldata name_, string calldata version_) public initializer {
+    function initialize(string calldata name_, string calldata version_) external initializer {
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();
         __EIP712_init_unchained(name_, version_);
@@ -142,7 +158,9 @@ contract StarExchange is
      * @notice Match ask using native coin
      * @param sellerAsk seller ask order
      */
-    function buy(OrderTypes.SellerOrder calldata sellerAsk) external payable override nonReentrant {
+    function buy(
+        OrderTypes.SellerOrder calldata sellerAsk
+    ) external payable override nonReentrant {
         bytes32 orderHash = sellerAsk.hash();
 
         // Check the maker ask order
@@ -156,9 +174,25 @@ contract StarExchange is
         _transferFeesAndFunds(sellerAsk.currency, buyer, sellerAsk.signer, sellerAsk.price);
 
         // Execute transfer token collection
-        _transferNonFungibleToken(sellerAsk.collection, sellerAsk.signer, buyer, sellerAsk.tokenId, sellerAsk.endTime, sellerAsk.permit);
+        _transferNonFungibleToken(
+            sellerAsk.collection,
+            sellerAsk.signer,
+            buyer,
+            sellerAsk.tokenId,
+            sellerAsk.endTime,
+            sellerAsk.permit
+        );
 
-        emit Buy(orderHash, sellerAsk.nonce, buyer, sellerAsk.signer, sellerAsk.currency, sellerAsk.collection, sellerAsk.tokenId, sellerAsk.price);
+        emit Buy(
+            orderHash,
+            sellerAsk.nonce,
+            buyer,
+            sellerAsk.signer,
+            sellerAsk.currency,
+            sellerAsk.collection,
+            sellerAsk.tokenId,
+            sellerAsk.price
+        );
     }
 
     /**
@@ -166,8 +200,16 @@ contract StarExchange is
      * @param newProtocolFeeRecipient_ new recipient for protocol fees
      * @param newProtocolFee_ protocol fee
      */
-    function setProtocolFee(address newProtocolFeeRecipient_, uint256 newProtocolFee_) external onlyRole(OPERATOR_ROLE) {
+    function setProtocolFee(
+        address newProtocolFeeRecipient_,
+        uint256 newProtocolFee_
+    ) external onlyRole(OPERATOR_ROLE) {
         _setProtocolFee(newProtocolFeeRecipient_, newProtocolFee_);
+    }
+
+    function version() external pure returns (bytes32) {
+        /// @dev value is equal to keccak256("StarExchange_v1")
+        return 0x477c2f7a68b1a96df2b5a60716b81b77518e4c21a69c262fd1e3ce3c997bf709;
     }
 
     /**
@@ -175,7 +217,10 @@ contract StarExchange is
      * @param user address of user
      * @param orderNonce nonce of the order
      */
-    function isNonceExecutedOrCancelled(address user, uint256 orderNonce) external view returns (bool) {
+    function isNonceExecutedOrCancelled(
+        address user,
+        uint256 orderNonce
+    ) external view returns (bool) {
         return _isNonceExecutedOrCancelled[user].get(orderNonce);
     }
 
@@ -186,7 +231,12 @@ contract StarExchange is
      * @param to_ seller's recipient
      * @param amount_ amount being transferred (in currency)
      */
-    function _transferFeesAndFunds(address currency_, address from_, address to_, uint256 amount_) internal {
+    function _transferFeesAndFunds(
+        address currency_,
+        address from_,
+        address to_,
+        uint256 amount_
+    ) internal {
         if (currency_ == NATIVE_TOKEN) {
             _receiveNative(amount_);
         }
@@ -218,7 +268,9 @@ contract StarExchange is
     }
 
     /* solhint-disable no-empty-blocks */
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(UPGRADER_ROLE) {}
 
     /**
      * @notice Calculate protocol fee
@@ -232,7 +284,10 @@ contract StarExchange is
      * @notice Verify the validity of the maker order
      * @param order seller order
      */
-    function _validateOrder(OrderTypes.SellerOrder calldata order, bytes32 orderHash) private view {
+    function _validateOrder(
+        OrderTypes.SellerOrder calldata order,
+        bytes32 orderHash
+    ) private view {
         // Verify the price is not 0
         require(order.price != 0, "!Price");
 
@@ -243,12 +298,21 @@ contract StarExchange is
         require(hasRole(CURRENCY_ROLE, order.currency), "!Currency");
         require(hasRole(COLLECTION_ROLE, order.collection), "!Collection");
 
-        (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(_hashTypedDataV4(orderHash), order.v, order.r, order.s);
+        (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(
+            _hashTypedDataV4(orderHash),
+            order.v,
+            order.r,
+            order.s
+        );
 
         // Verify the validity of the signature
         require(recoveredAddress != address(0) && recoveredAddress == order.signer, "!Signer");
 
         // Verify whether order nonce has expired
-        require((order.nonce >= minNonce[order.signer]) && (!_isNonceExecutedOrCancelled[order.signer].get(order.nonce)), "!Nonce");
+        require(
+            (order.nonce >= minNonce[order.signer]) &&
+                (!_isNonceExecutedOrCancelled[order.signer].get(order.nonce)),
+            "!Nonce"
+        );
     }
 }

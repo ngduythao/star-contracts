@@ -10,6 +10,7 @@ overrides:
     options:
       compiler: "0.8.18"
       tabWidth: 4
+      printWidth: 99
   - files: "*.ts"
     options:
       importOrder: ["<THIRD_PARTY_MODULES>", "^[./]"]

@@ -7,21 +7,32 @@ import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/I
 abstract contract EIP712Upgradeable is Initializable {
     /* solhint-disable var-name-mixedcase */
     /// @dev value is equal to keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-    bytes32 private constant _TYPE_HASH = 0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
+    bytes32 private constant _TYPE_HASH =
+        0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
     bytes32 internal _domainSeparator;
     uint256 internal _domainChainId;
 
-    function __EIP712_init(string calldata name, string calldata version) internal onlyInitializing {
+    function __EIP712_init(
+        string calldata name,
+        string calldata version
+    ) internal onlyInitializing {
         __EIP712_init_unchained(name, version);
     }
 
-    function __EIP712_init_unchained(string calldata name, string calldata version) internal onlyInitializing {
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
-        _domainChainId = chainId;
-        _domainSeparator = keccak256(abi.encode(_TYPE_HASH, keccak256(bytes(name)), keccak256(bytes(version)), _domainChainId, address(this)));
+    function __EIP712_init_unchained(
+        string memory name,
+        string memory version
+    ) internal onlyInitializing {
+        _domainChainId = block.chainid;
+        _domainSeparator = keccak256(
+            abi.encode(
+                _TYPE_HASH,
+                keccak256(bytes(name)),
+                keccak256(bytes(version)),
+                block.chainid,
+                address(this)
+            )
+        );
     }
 
     function _hashTypedDataV4(bytes32 structHash) internal view virtual returns (bytes32) {

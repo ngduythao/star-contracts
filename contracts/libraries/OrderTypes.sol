@@ -7,7 +7,8 @@ pragma solidity 0.8.18;
  */
 library OrderTypes {
     // keccak256("SellerOrder(address signer,address collection,uint256 price,uint256 tokenId,address currency,uint256 nonce,uint256 startTime,uint256 endTime,bytes permit)")
-    bytes32 internal constant SELLER_ORDER_HASH = 0x77e6796c71bfe525ae53a0f757d1a87b752a403ddc341df257ce81d3f363e801;
+    bytes32 internal constant SELLER_ORDER_HASH =
+        0x77e6796c71bfe525ae53a0f757d1a87b752a403ddc341df257ce81d3f363e801;
 
     struct SellerOrder {
         address signer; // signer of the seller

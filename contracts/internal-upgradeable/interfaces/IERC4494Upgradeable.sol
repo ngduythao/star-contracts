@@ -18,5 +18,10 @@ interface IERC4494Upgradeable {
     /// @param tokenId the token id
     /// @param deadline the deadline for the permit to be used
     /// @param signature permit
-    function permit(address spender, uint256 tokenId, uint256 deadline, bytes memory signature) external;
+    function permit(
+        address spender,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
 }

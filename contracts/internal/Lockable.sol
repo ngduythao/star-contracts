@@ -20,7 +20,11 @@ abstract contract Lockable is ILockable {
     }
 
     function _notLocked(address sender_, address from_, address to_) internal view virtual {
-        if (_isLocked.get(sender_.fillLast96Bits()) || _isLocked.get(from_.fillLast96Bits()) || _isLocked.get(to_.fillLast96Bits())) revert Lockable__Locked();
+        if (
+            _isLocked.get(sender_.fillLast96Bits()) ||
+            _isLocked.get(from_.fillLast96Bits()) ||
+            _isLocked.get(to_.fillLast96Bits())
+        ) revert Lockable__Locked();
     }
 
     function _setLockUser(address account_, bool status_) internal {

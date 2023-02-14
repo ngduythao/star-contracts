@@ -51,7 +51,12 @@ interface IERC721Upgradeable is IERC165Upgradeable {
      *
      * Emits a {Transfer} event.
      */
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) external;
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes calldata data
+    ) external;
 
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients

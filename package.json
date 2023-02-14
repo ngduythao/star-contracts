@@ -47,7 +47,7 @@
     "lint-staged": "^13.0.4",
     "lodash": "^4.17.21",
     "mocha": "^10.1.0",
-    "oz-custom": "^1.1.5-f-alpha",
+    "oz-custom": "1.1.7-beta-1",
     "pinst": "^3.0.0",
     "prettier": "^2.8.0",
     "prettier-plugin-solidity": "^1.0.0",

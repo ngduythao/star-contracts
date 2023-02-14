@@ -3,7 +3,9 @@
 pragma solidity 0.8.18;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { EnumerableSet } from "../libraries/EnumerableSet.sol";
 import { IOraclesManager } from "./interfaces/IOraclesManager.sol";
 
@@ -16,11 +18,17 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
     uint8 internal _threshHold;
     EnumerableSet.AddressSet private _oracleAddresses;
 
-    function __OraclesManager_init(uint8 threshold_, address[] calldata oracles_) internal onlyInitializing {
+    function __OraclesManager_init(
+        uint8 threshold_,
+        address[] calldata oracles_
+    ) internal onlyInitializing {
         __OraclesManager_init_unchained(threshold_, oracles_);
     }
 
-    function __OraclesManager_init_unchained(uint8 threshold_, address[] calldata oracles_) internal onlyInitializing {
+    function __OraclesManager_init_unchained(
+        uint8 threshold_,
+        address[] calldata oracles_
+    ) internal onlyInitializing {
         __Ownable_init_unchained();
         _setThreshhold(threshold_);
         _addOracles(oracles_);

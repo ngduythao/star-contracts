@@ -4,10 +4,18 @@ pragma solidity 0.8.18;
 
 // external
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import {
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {
+    ReentrancyGuardUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {
+    ECDSAUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
 // internal
 import { EIP712Upgradeable } from "./internal-upgradeable/EIP712Upgradeable.sol";
@@ -24,7 +32,16 @@ import { ClaimTypes } from "./libraries/ClaimTypes.sol";
  * @title Star Claim
  */
 
-contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgradeable, CurrencyManagerUpgradeable, OraclesManagerUpgradeable, ReentrancyGuardUpgradeable, EIP712Upgradeable {
+contract StarClaim is
+    IStarClaim,
+    Initializable,
+    UUPSUpgradeable,
+    PausableUpgradeable,
+    CurrencyManagerUpgradeable,
+    OraclesManagerUpgradeable,
+    ReentrancyGuardUpgradeable,
+    EIP712Upgradeable
+{
     using ClaimTypes for ClaimTypes.Claim;
 
     mapping(address => uint256) private _nonces;
@@ -34,14 +51,22 @@ contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgrad
         _disableInitializers();
     }
 
-    function initialize(string calldata name_, string calldata version_, uint8 threshold_, address[] calldata oracles_) public initializer {
+    function initialize(
+        string calldata name_,
+        string calldata version_,
+        uint8 threshold_,
+        address[] calldata oracles_
+    ) public initializer {
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();
         __EIP712_init_unchained(name_, version_);
         __OraclesManager_init(threshold_, oracles_);
     }
 
-    function claim(ClaimTypes.Claim calldata claim_, Signature[] calldata signatures_) external whenNotPaused nonReentrant {
+    function claim(
+        ClaimTypes.Claim calldata claim_,
+        Signature[] calldata signatures_
+    ) external whenNotPaused nonReentrant {
         uint256 length = claim_.tokens.length;
         bytes32 claimHash = claim_.hash();
         address sender = _msgSender();
@@ -50,7 +75,8 @@ contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgrad
         if (length != claim_.amounts.length) revert LengthMismatch();
 
         //solhint-disable-next-line avoid-tx-origin
-        if (sender != tx.origin || sender != claim_.user || sender.code.length != 0) revert InvalidSender();
+        if (sender != tx.origin || sender != claim_.user || sender.code.length != 0)
+            revert InvalidSender();
 
         // prevents replay
         unchecked {
@@ -94,7 +120,12 @@ contract StarClaim is IStarClaim, Initializable, UUPSUpgradeable, PausableUpgrad
         uint256 index;
         bytes32 digest = _hashTypedDataV4(claimHash_);
         for (uint256 i; i < length; ) {
-            (recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signs_[i].v, signs_[i].r, signs_[i].s);
+            (recoveredAddress, ) = ECDSAUpgradeable.tryRecover(
+                digest,
+                signs_[i].v,
+                signs_[i].r,
+                signs_[i].s
+            );
             if (!_isValidOracle(recoveredAddress)) revert InvalidOracle();
 
             index = _indexOf(recoveredAddress);
