@@ -9,6 +9,9 @@ import {
     PausableUpgradeable
 } from "oz-custom/contracts/oz-upgradeable/security/PausableUpgradeable.sol";
 import {
+    ReentrancyGuardUpgradeable
+} from "oz-custom/contracts/oz-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {
     AccessControlEnumerableUpgradeable
 } from "oz-custom/contracts/oz-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 
@@ -156,6 +159,7 @@ contract Auction is
     TransferableUpgradeable,
     ProxyCheckerUpgradeable,
     BlacklistableUpgradeable,
+    ReentrancyGuardUpgradeable,
     AccessControlEnumerableUpgradeable
 {
     using AuctionLib for *;
@@ -183,6 +187,7 @@ contract Auction is
         address[] calldata operators_
     ) external initializer {
         __Pausable_init_unchained();
+        __ReentrancyGuard_init_unchained();
         __Signable_init_unchained(type(Auction).name, "1");
         __Auction_init_unchained(wnt_, admin_, operators_);
     }
@@ -207,6 +212,14 @@ contract Auction is
         }
     }
 
+    function pause() external onlyRole(OPERATOR_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(OPERATOR_ROLE) {
+        _unpause();
+    }
+
     function setUserStatus(
         address account_,
         bool status_
@@ -224,7 +237,7 @@ contract Auction is
         ClaimPermit calldata claim_,
         bytes calldata bidSignature_,
         bytes calldata claimSignature_
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused nonReentrant {
         /// check input
         address operator = _msgSender();
         _checkCaller(operator);
