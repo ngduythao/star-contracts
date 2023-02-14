@@ -306,11 +306,11 @@ contract Auction is
         return _nonce(account_.fillLast12Bytes());
     }
 
-    function _nonZeroAddress(address addr_) internal virtual {
+    function _nonZeroAddress(address addr_) internal pure virtual {
         if (addr_ == address(0)) revert Auction__ZeroAddress();
     }
 
-    function _checkCaller(address caller_) internal virtual {
+    function _checkCaller(address caller_) internal view virtual {
         if (!hasRole(OPERATOR_ROLE, caller_)) _onlyEOA(caller_);
     }
 
