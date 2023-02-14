@@ -91,6 +91,19 @@ interface IAuction {
         BidPermit bid,
         ClaimPermit claim
     );
+
+    function pause() external;
+
+    function unpause() external;
+
+    function version() external pure returns (bytes32);
+
+    function claimBid(
+        BidPermit calldata bid_,
+        ClaimPermit calldata claim_,
+        bytes calldata bidSignature_,
+        bytes calldata claimSignature_
+    ) external payable;
 }
 
 library AuctionLib {
@@ -98,7 +111,10 @@ library AuctionLib {
         return
             keccak256(
                 abi.encode(
-                    /// @dev value is equal to keccak256("BidPermit(address token,address value,uint256 deadline,Bidder bidder,bytes extraData)Bidder(address account,address payment,uint256 unitPrice,uint256 deadline,bytes signature)")
+                    /// @dev value is equal to
+                    //keccak256(
+                    //"BidPermit(address token,address value,uint256 deadline,Bidder bidder,bytes extraData)Bidder(address account,address payment,uint256 unitPrice,uint256 deadline,bytes signature)"
+                    //)
                     0x984eb53d0241e40771e083d5e7ada0e9f2f0ca4641e6d22efdabefea39ae90ae,
                     bidPermit_.token,
                     bidPermit_.value,
@@ -127,7 +143,9 @@ library AuctionLib {
         return
             keccak256(
                 abi.encode(
-                    /// @dev value is equal to keccak256("ClaimPermit(bytes32 bidId,uint256 deadline,Claimer claimer,bytes extraData)Claimer(uint256 deadline,bytes signature)")
+                    /// @dev value is equal to keccak256(
+                    //"ClaimPermit(bytes32 bidId,uint256 deadline,Claimer claimer,bytes extraData)Claimer(uint256 deadline,bytes signature)"
+                    //)
                     0x03a3e39d54d630493934dec65ee871b9cf07021a492696ee3be67e9fa9a94247,
                     claimPermit_.bidId,
                     claimPermit_.deadline,
