@@ -104,6 +104,8 @@ interface IAuction {
         bytes calldata bidSignature_,
         bytes calldata claimSignature_
     ) external payable;
+
+    function nonces(address account_) external view returns (uint256);
 }
 
 library AuctionLib {
