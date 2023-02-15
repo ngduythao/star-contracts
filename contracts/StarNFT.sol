@@ -32,6 +32,7 @@ import {
 } from "./internal-upgradeable/ERC721WithPermitUpgradable.sol";
 import { CurrencyManagerUpgradeable } from "./internal-upgradeable/CurrencyManagerUpgradeable.sol";
 import { IStarNFT } from "./interfaces/IStarNFT.sol";
+import { PermitHelper } from "./libraries/PermitHelper.sol";
 
 contract StarNFT is
     IStarNFT,
@@ -45,6 +46,7 @@ contract StarNFT is
     ERC721URIStorageUpgradeable
 {
     using BitMapsUpgradeable for BitMapsUpgradeable.BitMap;
+    using PermitHelper for address;
 
     /// @dev value is equal to keccak256("OPERATOR_ROLE")
     bytes32 private constant OPERATOR_ROLE =
@@ -58,9 +60,9 @@ contract StarNFT is
     /// @dev value is equal to keccak256("Metadata(string name)")
     bytes32 private constant METADATA_TYPEHASH =
         0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
-    /// @dev value is equal to keccak256("Store(uint256 uid,address account,Metadata metadata)Metadata(string name)")
+    /// @dev value is equal to keccak256("Metadata(string name)Store(uint256 uid,address account,Metadata metadata)")
     bytes32 private constant STORE_TYPEHASH =
-        0x846c0ba6933a8d5c76907555263138af551c266efcf9b26fa6b0634d2aa419a2;
+        0x55b1262831970d4dd15bacbbc19742aab8a8b5b6778c1ed519948a6fe4648ac7;
 
     address public treasury;
     uint256 private constant CHAIN_ID_SLOT = 3;
@@ -127,6 +129,8 @@ contract StarNFT is
     function createStore(
         Store calldata store_,
         address paymentToken_,
+        uint256 deadline_,
+        bytes calldata permitSignature_,
         bytes calldata signature_
     ) external {
         uint256 amount = _paymentAmount[paymentToken_];
@@ -141,6 +145,9 @@ contract StarNFT is
             (recoveredAddress != address(0) && hasRole(MINTER_ROLE, recoveredAddress)),
             "!SIG"
         );
+
+        if (permitSignature_.length != 0)
+            paymentToken_.permit(amount, deadline_, permitSignature_);
         _transferCurrency(paymentToken_, _msgSender(), treasury, amount);
         _createStore(store_.uid, store_.account, store_.metadata);
     }
