@@ -60,9 +60,9 @@ contract StarNFT is
     /// @dev value is equal to keccak256("Metadata(string name)")
     bytes32 private constant METADATA_TYPEHASH =
         0xbf715eb9495814abc85e5e9775550839f827f87ceb101d58a20b16146e57d69c;
-    /// @dev value is equal to keccak256("Metadata(string name)Store(uint256 uid,address account,Metadata metadata)")
-    bytes32 private constant STORE_TYPEHASH =
-        0x55b1262831970d4dd15bacbbc19742aab8a8b5b6778c1ed519948a6fe4648ac7;
+    /// @dev value is equal to keccak256("CreateStore(uint256 uid,address account,Metadata metadata)Metadata(string name)")
+    bytes32 private constant CREATE_STORE_TYPEHASH =
+        0x182bb33cb8661f6356010cf040184dc3c21e21e9f5d7e5fb2479fe6d33e03d21;
 
     address public treasury;
     uint256 private constant CHAIN_ID_SLOT = 3;
@@ -137,7 +137,12 @@ contract StarNFT is
         require(amount > 0, "!TOKEN");
 
         bytes32 structHash = keccak256(
-            abi.encode(STORE_TYPEHASH, store_.uid, store_.account, _hashMetadata(store_.metadata))
+            abi.encode(
+                CREATE_STORE_TYPEHASH,
+                store_.uid,
+                store_.account,
+                _hashMetadata(store_.metadata)
+            )
         );
         bytes32 digest = _hashTypedDataV4(structHash);
         (address recoveredAddress, ) = ECDSAUpgradeable.tryRecover(digest, signature_);
@@ -176,7 +181,7 @@ contract StarNFT is
     }
 
     function _hashMetadata(Metadata calldata metadata_) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(abi.encode(METADATA_TYPEHASH, metadata_.name)));
+        return keccak256(abi.encode(METADATA_TYPEHASH, keccak256(bytes(metadata_.name))));
     }
 
     function _createStore(uint256 uid_, address account_, Metadata calldata metadata_) internal {
