@@ -45,6 +45,7 @@ import { BidPermit, ClaimPermit, Bidder, Claimer, AuctionLib } from "./libraries
 
 import { Bytes32Address } from "./libraries/Bytes32Address.sol";
 import { SigUtil } from "oz-custom/contracts/libraries/SigUtil.sol";
+import { FixedPointMathLib } from "oz-custom/contracts/libraries/FixedPointMathLib.sol";
 
 import {
     ERC165CheckerUpgradeable
@@ -65,6 +66,7 @@ contract StarAuction is
     using AuctionLib for *;
     using SigUtil for bytes;
     using Bytes32Address for address;
+    using FixedPointMathLib for uint256;
     using ERC165CheckerUpgradeable for address;
 
     /// @dev value is equal to keccak256("PAUSER_ROLE")
@@ -76,9 +78,16 @@ contract StarAuction is
     /// @dev value is equal to keccak256("UPGRADER_ROLE")
     bytes32 public constant UPGRADER_ROLE =
         0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
+    /// @dev value is equal to keccak256("FEE_CLAIMER_ROLE")
+    bytes32 public constant FEE_CLAIMER_ROLE =
+        0x8dd046eb6fe22791cf064df41dbfc76ef240a563550f519aac88255bd8c2d3bb;
+
+    /// @dev value is equal to keccak256("ClaimFee(address receiver,address token,uint256 amount,uint256 nonce,uint256 deadline)")
+    bytes32 private constant __FEE_CLAIM_TYPE_HASH =
+        0x4fd61e254d4c428ac711f5b7fa7a35dc6a3cb2a4b854b837b5c66fb74c3167f9;
 
     IWNT public wnt;
-    uint256 public protocolFeeFraction;
+    uint256 public protocolFee;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() payable {
@@ -88,26 +97,30 @@ contract StarAuction is
     function initialize(
         IWNT wnt_,
         address admin_,
+        uint256 protocolFee_,
         bytes32[] calldata roles_,
         address[] calldata operators_
     ) external initializer {
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();
         __Signable_init_unchained(type(StarAuction).name, "1");
-        __Auction_init_unchained(wnt_, admin_, roles_, operators_);
+        __Auction_init_unchained(wnt_, admin_, protocolFee_, roles_, operators_);
     }
 
     function __Auction_init_unchained(
         IWNT wnt_,
         address admin_,
+        uint256 protocolFee_,
         bytes32[] calldata roles_,
         address[] calldata operators_
     ) internal virtual onlyInitializing {
         wnt = wnt_;
+        protocolFee = protocolFee_;
 
         _grantRole(PAUSER_ROLE, admin_);
         _grantRole(OPERATOR_ROLE, admin_);
         _grantRole(UPGRADER_ROLE, admin_);
+        _grantRole(FEE_CLAIMER_ROLE, admin_);
         _grantRole(DEFAULT_ADMIN_ROLE, admin_);
 
         uint256 length = operators_.length;
@@ -137,6 +150,37 @@ contract StarAuction is
         _setUserStatus(account_, status_);
     }
 
+    function claimFee(
+        address receiver_,
+        address token_,
+        uint256 amount_,
+        uint256 deadline_,
+        bytes calldata signature_
+    ) external onlyRole(OPERATOR_ROLE) {
+        if (amount_ == 0) revert StarAuction__InvalidClaim();
+        if (deadline_ > block.timestamp) revert StarAuction__Expired();
+        if (!hasRole(FEE_CLAIMER_ROLE, receiver_)) revert StarAuction__Unauthorized();
+
+        address signer = _recoverSigner(
+            keccak256(
+                abi.encode(
+                    __FEE_CLAIM_TYPE_HASH,
+                    receiver_,
+                    token_,
+                    amount_,
+                    _useNonce(receiver_.fillLast12Bytes()),
+                    deadline_
+                )
+            ),
+            signature_
+        );
+        if (!hasRole(DEFAULT_ADMIN_ROLE, signer)) revert StarAuction__InvalidSignature();
+
+        _safeERC20Transfer(IERC20Upgradeable(token_), receiver_, amount_);
+
+        emit ClaimedFee(_msgSender(), receiver_, signer, token_, amount_);
+    }
+
     function claimBid(
         BidPermit calldata bid_,
         ClaimPermit calldata claim_,
@@ -149,7 +193,8 @@ contract StarAuction is
 
         _checkBid(bid_);
 
-        bytes32 bidId = bid_.hash();
+        // @dev create new nonce id in order for user to sign same tokenId for different NFT contracts
+        bytes32 bidId = bid_.hash(_useNonce(keccak256(abi.encode(bid_.token, bid_.value))));
         _checkClaim(bidId, claim_);
 
         // validate signature
@@ -157,7 +202,8 @@ contract StarAuction is
         _nonZeroAddress(bidder);
         _checkBlacklist(bidder);
 
-        address claimer = _recoverSigner(claim_.hash(), claimSignature_);
+        //  @dev prevent replay signature
+        address claimer = _recoverSigner(claim_.hash(_useNonce(bidId)), claimSignature_);
         _nonZeroAddress(bidder);
         _checkBlacklist(claimer);
 
@@ -171,8 +217,16 @@ contract StarAuction is
         emit ClaimedBid(operator, bidder, claimer, bid_, claim_);
     }
 
-    function nonces(address account_) external view returns (uint256) {
-        return _nonce(account_.fillLast12Bytes());
+    function nonces(bytes32 bidId_) external view returns (uint256) {
+        return _nonce(bidId_);
+    }
+
+    function nonces(address nft_, uint256 tokenId_) external view returns (uint256) {
+        return _nonce(keccak256(abi.encode(nft_, tokenId_)));
+    }
+
+    function nonces(address receiver_) external view returns (uint256) {
+        return _nonce(receiver_.fillLast12Bytes());
     }
 
     function percentageFraction() public pure virtual returns (uint256) {
@@ -255,7 +309,7 @@ contract StarAuction is
     ) internal override onlyRole(UPGRADER_ROLE) {}
 
     function _calcProtocolFee(uint256 value_) internal view virtual returns (uint256) {
-        return (value_ * protocolFeeFraction) / percentageFraction();
+        return value_.mulDivUp(protocolFee, percentageFraction());
     }
 
     function _checkCaller(address caller_) internal view virtual {

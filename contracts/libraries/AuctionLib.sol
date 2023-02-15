@@ -4,17 +4,18 @@ pragma solidity 0.8.18;
 import { BidPermit, Bidder, ClaimPermit, Claimer } from "../interfaces/IStarAuction.sol";
 
 library AuctionLib {
-    function hash(BidPermit calldata bidPermit_) internal pure returns (bytes32) {
+    function hash(BidPermit calldata bidPermit_, uint256 nonce_) internal pure returns (bytes32) {
         return
             keccak256(
                 abi.encode(
                     /// @dev value is equal to
                     //keccak256(
-                    //"BidPermit(address token,address value,uint256 deadline,Bidder bidder,bytes extraData)Bidder(address account,address payment,uint256 unitPrice,uint256 deadline,bytes signature)"
+                    //"BidPermit(address token,address value,uint256 nonce,uint256 deadline,Bidder bidder,bytes extraData)Bidder(address account,address payment,uint256 unitPrice,uint256 deadline,bytes signature)"
                     //)
-                    0x984eb53d0241e40771e083d5e7ada0e9f2f0ca4641e6d22efdabefea39ae90ae,
+                    0x08fde214c4bd5a5f97340a3b8b370c9be5f0a80d47a374f8e2469c1e7406cf2d,
                     bidPermit_.token,
                     bidPermit_.value,
+                    nonce_,
                     bidPermit_.deadline,
                     hash(bidPermit_.bidder),
                     keccak256(bytes(bidPermit_.extraData))
@@ -36,15 +37,19 @@ library AuctionLib {
             );
     }
 
-    function hash(ClaimPermit calldata claimPermit_) internal pure returns (bytes32) {
+    function hash(
+        ClaimPermit calldata claimPermit_,
+        uint256 nonce_
+    ) internal pure returns (bytes32) {
         return
             keccak256(
                 abi.encode(
                     /// @dev value is equal to keccak256(
-                    //"ClaimPermit(bytes32 bidId,uint256 deadline,Claimer claimer,bytes extraData)Claimer(uint256 deadline,bytes signature)"
+                    //"ClaimPermit(bytes32 bidId,uint256 nonce,uint256 deadline,Claimer claimer,bytes extraData)Claimer(uint256 deadline,bytes signature)"
                     //)
-                    0x03a3e39d54d630493934dec65ee871b9cf07021a492696ee3be67e9fa9a94247,
+                    0xe93ebbc6a90f74222f40762a35d515227cb4b2e78e83817f5a91f826188a43b1,
                     claimPermit_.bidId,
+                    nonce_,
                     claimPermit_.deadline,
                     hash(claimPermit_.claimer),
                     keccak256(bytes(claimPermit_.extraData))

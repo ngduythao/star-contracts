@@ -29,6 +29,7 @@ struct ClaimPermit {
 }
 
 interface IStarAuction {
+    error StarAuction__Expired();
     error StarAuction__InvalidBid();
     error StarAuction__ZeroAddress();
     error StarAuction__Blacklisted();
@@ -36,6 +37,7 @@ interface IStarAuction {
     error StarAuction__InvalidClaim();
     error StarAuction__LengthMismatch();
     error StarAuction__InvalidAddress();
+    error StarAuction__InvalidSignature();
 
     event Refunded(address indexed operator_, uint256 indexed refund);
 
@@ -45,6 +47,14 @@ interface IStarAuction {
         address indexed claimer,
         BidPermit bid,
         ClaimPermit claim
+    );
+
+    event ClaimedFee(
+        address indexed operator,
+        address indexed receiver,
+        address indexed signer,
+        address token,
+        uint256 amount
     );
 
     function pause() external;
@@ -60,5 +70,9 @@ interface IStarAuction {
         bytes calldata claimSignature_
     ) external payable;
 
-    function nonces(address account_) external view returns (uint256);
+    function nonces(address receiver_) external view returns (uint256);
+
+    function nonces(bytes32 bidId_) external view returns (uint256);
+
+    function nonces(address nft_, uint256 tokenId_) external view returns (uint256);
 }
