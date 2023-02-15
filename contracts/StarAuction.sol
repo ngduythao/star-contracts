@@ -78,6 +78,7 @@ contract StarAuction is
         0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3;
 
     IWNT public wnt;
+    uint256 public protocolFeeFraction;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() payable {
@@ -104,6 +105,9 @@ contract StarAuction is
     ) internal virtual onlyInitializing {
         wnt = wnt_;
 
+        _grantRole(PAUSER_ROLE, admin_);
+        _grantRole(OPERATOR_ROLE, admin_);
+        _grantRole(UPGRADER_ROLE, admin_);
         _grantRole(DEFAULT_ADMIN_ROLE, admin_);
 
         uint256 length = operators_.length;
@@ -171,6 +175,10 @@ contract StarAuction is
         return _nonce(account_.fillLast12Bytes());
     }
 
+    function percentageFraction() public pure virtual returns (uint256) {
+        return 10_000;
+    }
+
     function version() public pure returns (bytes32) {
         /// @dev value is equal to keccak256("Auction_v1")
         return 0xffa2af4479cc119ea2b7c2be2004b9e67e391aa833d052f18616e1fb320f7781;
@@ -181,10 +189,11 @@ contract StarAuction is
         address claimer_,
         uint256 value_
     ) internal virtual {
-        uint256 refund = msg.value - value_; // will underflow error if msg.value < value
+        uint256 total = value_ + _calcProtocolFee(value_);
+        uint256 refund = msg.value - total; // will underflow error if msg.value < value
 
         address _wnt = address(wnt);
-        IWNT(_wnt).deposit{ value: value_ }();
+        IWNT(_wnt).deposit{ value: total }();
         _safeERC20Transfer(IERC20Upgradeable(_wnt), claimer_, value_);
 
         if (refund == 0) return;
@@ -200,12 +209,13 @@ contract StarAuction is
     ) internal virtual {
         address payment = bid_.bidder.payment;
         uint256 unitPrice = bid_.bidder.unitPrice;
-        if (IERC20Upgradeable(payment).allowance(bidder_, address(this)) < unitPrice) {
+        uint256 total = unitPrice + _calcProtocolFee(unitPrice);
+        if (IERC20Upgradeable(payment).allowance(bidder_, address(this)) < total) {
             (bytes32 r, bytes32 s, uint8 v) = bid_.bidder.signature.split();
             IERC20PermitUpgradeable(payment).permit(
                 bidder_,
                 address(this),
-                unitPrice,
+                total,
                 bid_.bidder.deadline,
                 v,
                 r,
@@ -213,7 +223,8 @@ contract StarAuction is
             );
         }
 
-        _safeERC20TransferFrom(IERC20Upgradeable(payment), bidder_, claimer_, unitPrice);
+        _safeERC20TransferFrom(IERC20Upgradeable(payment), bidder_, address(this), total);
+        _safeERC20TransferFrom(IERC20Upgradeable(payment), address(this), claimer_, unitPrice);
     }
 
     function _handleERC721Transfer(
@@ -242,6 +253,10 @@ contract StarAuction is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {}
+
+    function _calcProtocolFee(uint256 value_) internal view virtual returns (uint256) {
+        return (value_ * protocolFeeFraction) / percentageFraction();
+    }
 
     function _checkCaller(address caller_) internal view virtual {
         if (!hasRole(OPERATOR_ROLE, caller_)) _onlyEOA(caller_);
