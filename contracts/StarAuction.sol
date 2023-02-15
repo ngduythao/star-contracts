@@ -161,6 +161,7 @@ contract StarAuction is
         if (deadline_ > block.timestamp) revert StarAuction__Expired();
         if (!hasRole(FEE_CLAIMER_ROLE, receiver_)) revert StarAuction__Unauthorized();
 
+        // signature prevent reentrancy
         address signer = _recoverSigner(
             keccak256(
                 abi.encode(
@@ -176,7 +177,9 @@ contract StarAuction is
         );
         if (!hasRole(DEFAULT_ADMIN_ROLE, signer)) revert StarAuction__InvalidSignature();
 
-        _safeERC20Transfer(IERC20Upgradeable(token_), receiver_, amount_);
+        if (token_ != address(0))
+            _safeERC20Transfer(IERC20Upgradeable(token_), receiver_, amount_);
+        else _safeNativeTransfer(receiver_, amount_, "SAFE_WITHDRAW");
 
         emit ClaimedFee(_msgSender(), receiver_, signer, token_, amount_);
     }
@@ -278,7 +281,7 @@ contract StarAuction is
         }
 
         _safeERC20TransferFrom(IERC20Upgradeable(payment), bidder_, address(this), total);
-        _safeERC20TransferFrom(IERC20Upgradeable(payment), address(this), claimer_, unitPrice);
+        _safeERC20Transfer(IERC20Upgradeable(payment), claimer_, unitPrice);
     }
 
     function _handleERC721Transfer(
