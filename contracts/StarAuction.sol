@@ -341,5 +341,5 @@ contract StarAuction is
         if (addr_ == address(0)) revert StarAuction__ZeroAddress();
     }
 
-    uint256[49] private __gap;
+    uint256[48] private __gap;
 }
