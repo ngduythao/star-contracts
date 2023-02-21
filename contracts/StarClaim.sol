@@ -90,7 +90,7 @@ contract StarClaim is
             }
         }
 
-        emit Claim(sender, claimHash, claim_);
+        emit Claim(sender, claimHash);
     }
 
     /// @notice Allows to retrieve next nonce for the claim
