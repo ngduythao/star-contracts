@@ -57,8 +57,7 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
         uint256 length = oracles_.length;
 
         for (uint256 i; i < length; ) {
-            if (_oracleAddresses.contains(oracles_[i])) revert OracleAlreadyExist();
-            _oracleAddresses.add(oracles_[i]);
+            if (!_oracleAddresses.add(oracles_[i])) revert OracleAlreadyExist();
 
             unchecked {
                 ++i;
@@ -68,8 +67,7 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
     }
 
     function _removeOracle(address oracle_) internal {
-        if (!_oracleAddresses.contains(oracle_)) revert OracleNotFound();
-        _oracleAddresses.remove(oracle_);
+        if (!_oracleAddresses.remove(oracle_)) revert OracleNotFound();
         emit RemoveOracle(oracle_);
     }
 
@@ -88,16 +86,7 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
     }
 
     function viewOracles() external view override returns (address[] memory, uint256) {
-        uint256 length = _oracleAddresses.length();
-        address[] memory oracleAddresses = new address[](length);
-        for (uint256 i; i < length; ) {
-            oracleAddresses[i] = _oracleAddresses.at(i);
-            unchecked {
-                ++i;
-            }
-        }
-
-        return (oracleAddresses, length);
+        return (_oracleAddresses.values(), _oracleAddresses.length());
     }
 
     function _viewCountOracles() internal view returns (uint256) {
@@ -111,4 +100,6 @@ contract OraclesManagerUpgradeable is IOraclesManager, Initializable, OwnableUpg
     function _indexOf(address oracle) internal view returns (uint256) {
         return _oracleAddresses.indexOf(oracle);
     }
+
+    uint256[48] private __gap;
 }

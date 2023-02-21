@@ -30,5 +30,5 @@ interface IStarClaim {
 
     /* ========== EVENTS ========== */
     /// @dev Emitted once the submission is confirmed by min required amount of oracles.
-    event Claim(address user, bytes32 claimId);
+    event Claim(address user, bytes32 claimId, ClaimTypes.Claim claim);
 }

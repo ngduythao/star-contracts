@@ -13,12 +13,12 @@ import {
 import {
     ReentrancyGuardUpgradeable
 } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {
-    ECDSAUpgradeable
-} from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
+import {
+    ECDSAUpgradeable,
+    EIP712Upgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 // internal
-import { EIP712Upgradeable } from "./internal-upgradeable/EIP712Upgradeable.sol";
 import { CurrencyManagerUpgradeable } from "./internal-upgradeable/CurrencyManagerUpgradeable.sol";
 import { OraclesManagerUpgradeable } from "./internal-upgradeable/OraclesManagerUpgradeable.sol";
 
@@ -36,11 +36,11 @@ contract StarClaim is
     IStarClaim,
     Initializable,
     UUPSUpgradeable,
+    EIP712Upgradeable,
     PausableUpgradeable,
-    CurrencyManagerUpgradeable,
     OraclesManagerUpgradeable,
     ReentrancyGuardUpgradeable,
-    EIP712Upgradeable
+    CurrencyManagerUpgradeable
 {
     using ClaimTypes for ClaimTypes.Claim;
 
@@ -56,7 +56,7 @@ contract StarClaim is
         string calldata version_,
         uint8 threshold_,
         address[] calldata oracles_
-    ) public initializer {
+    ) external initializer {
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();
         __EIP712_init_unchained(name_, version_);
@@ -67,22 +67,20 @@ contract StarClaim is
         ClaimTypes.Claim calldata claim_,
         Signature[] calldata signatures_
     ) external whenNotPaused nonReentrant {
-        uint256 length = claim_.tokens.length;
-        bytes32 claimHash = claim_.hash();
         address sender = _msgSender();
-
-        if (claim_.deadline < block.timestamp) revert ExpiredSignature();
-        if (length != claim_.amounts.length) revert LengthMismatch();
-
         //solhint-disable-next-line avoid-tx-origin
         if (sender != tx.origin || sender != claim_.user || sender.code.length != 0)
             revert InvalidSender();
 
+        if (claim_.deadline < block.timestamp) revert ExpiredSignature();
+        uint256 length = claim_.tokens.length;
+        if (length != claim_.amounts.length) revert LengthMismatch();
+
         // prevents replay
         unchecked {
-            if (claim_.nonce != ++_nonces[sender]) revert InvalidNonce();
+            if (claim_.nonce != _nonces[sender]++) revert InvalidNonce();
         }
-
+        bytes32 claimHash = claim_.hash();
         _validateSignatures(claimHash, signatures_);
 
         for (uint256 i; i < length; ) {
@@ -92,16 +90,14 @@ contract StarClaim is
             }
         }
 
-        emit Claim(sender, claimHash);
+        emit Claim(sender, claimHash, claim_);
     }
 
     /// @notice Allows to retrieve next nonce for the claim
     /// @param account_ user adddress
     /// @return next account nonce
     function nonce(address account_) external view returns (uint256) {
-        unchecked {
-            return _nonces[account_] + 1;
-        }
+        return _nonces[account_];
     }
 
     /* solhint-disable no-empty-blocks */
@@ -126,10 +122,11 @@ contract StarClaim is
                 signs_[i].r,
                 signs_[i].s
             );
-            if (!_isValidOracle(recoveredAddress)) revert InvalidOracle();
-
             index = _indexOf(recoveredAddress);
             if (oracles[index] != address(0)) revert DuplicateSignatures();
+
+            if (!_isValidOracle(recoveredAddress)) revert InvalidOracle();
+
             oracles[index] = recoveredAddress;
 
             unchecked {
@@ -137,4 +134,6 @@ contract StarClaim is
             }
         }
     }
+
+    uint256[49] private __gap;
 }

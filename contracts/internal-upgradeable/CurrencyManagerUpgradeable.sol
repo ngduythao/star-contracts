@@ -3,33 +3,24 @@ pragma solidity 0.8.18;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {
-    AddressUpgradeable
-} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import {
-    IERC20Upgradeable
-} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {
+    IERC20Upgradeable,
     SafeERC20Upgradeable
 } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import { IERC20PermitUpgradeable } from "./interfaces/IERC20PermitUpgradeable.sol";
-import { IERC4494Upgradeable } from "./interfaces/IERC4494Upgradeable.sol";
-import { IERC721Upgradeable } from "./interfaces/IERC721Upgradeable.sol";
 import { ICurrencyManager } from "./interfaces/ICurrencyManager.sol";
+import { IERC721Upgradeable } from "./interfaces/IERC721Upgradeable.sol";
+import { IERC4494Upgradeable } from "./interfaces/IERC4494Upgradeable.sol";
+import { IERC20PermitUpgradeable } from "./interfaces/IERC20PermitUpgradeable.sol";
+
 import { PermitHelper } from "../libraries/PermitHelper.sol";
+import { ErrorHandler } from "../libraries/ErrorHandler.sol";
 
 contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
+    using ErrorHandler for bool;
     using PermitHelper for address;
-    using AddressUpgradeable for *;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     address public constant NATIVE_TOKEN = address(0); // The address interpreted as native token of the chain.
-
-    function __CurrencyManager_init() internal onlyInitializing {
-        __CurrencyManager_init_unchained();
-    }
-
-    function __CurrencyManager_init_unchained() internal onlyInitializing {}
 
     /**
      * @notice Transfer NFT
@@ -68,6 +59,7 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
         uint256 amount_
     ) internal {
         if (amount_ == 0) return;
+        if (to_ == address(0)) revert NonZeroAddress();
 
         if (currency_ == NATIVE_TOKEN) {
             _safeTransferNativeToken(to_, amount_);
@@ -97,8 +89,8 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
         if (to_ == address(this)) return;
         // solhint-disable avoid-low-level-calls
         // slither-disable-next-line low-level-calls
-        (bool success, ) = to_.call{ value: value_ }("");
-        require(success, "!TF");
+        (bool success, bytes memory revertData) = to_.call{ value: value_ }("");
+        success.handleRevertIfNotSuccess(revertData);
     }
 
     function _safeOwnerOf(address token_, uint256 tokenId_) private view returns (address owner) {
@@ -106,8 +98,9 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
             abi.encodeCall(IERC721Upgradeable.ownerOf, (tokenId_))
         );
         if (success) {
-            owner = abi.decode(data, (address));
+            return abi.decode(data, (address));
         }
+        success.handleRevertIfNotSuccess(data);
     }
 
     function _safeBalanceOf(
@@ -121,8 +114,9 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
                 abi.encodeCall(IERC20Upgradeable.balanceOf, (account_))
             );
             if (success) {
-                balance = abi.decode(data, (uint256));
+                return abi.decode(data, (uint256));
             }
+            success.handleRevertIfNotSuccess(data);
         }
     }
 
@@ -131,5 +125,5 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
      * variables without shifting down storage in the inheritance chain.
      * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
      */
-    uint256[45] private __gap;
+    uint256[50] private __gap;
 }
