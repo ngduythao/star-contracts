@@ -78,7 +78,7 @@ contract StarClaim is
 
         // prevents replay
         unchecked {
-            if (claim_.nonce != _nonces[sender]++) revert InvalidNonce();
+            if (claim_.nonce != ++_nonces[sender]) revert InvalidNonce();
         }
         bytes32 claimHash = claim_.hash();
         _validateSignatures(claimHash, signatures_);
@@ -97,7 +97,9 @@ contract StarClaim is
     /// @param account_ user adddress
     /// @return next account nonce
     function nonce(address account_) external view returns (uint256) {
-        return _nonces[account_];
+        unchecked {
+            return _nonces[account_] + 1;
+        }
     }
 
     /* solhint-disable no-empty-blocks */
