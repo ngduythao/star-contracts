@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 
 /**
  * @dev Library for managing uint256 to bool mapping in a compact and efficient way, providing the keys are sequential.
