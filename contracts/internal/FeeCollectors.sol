@@ -65,6 +65,4 @@ contract FeeCollectors {
     function _contain(address recipient) internal view returns (bool) {
         return _feeRecipients.contains(recipient);
     }
-
-    uint256[50] private __gap;
 }

@@ -103,23 +103,6 @@ contract CurrencyManagerUpgradeable is ICurrencyManager, Initializable {
         success.handleRevertIfNotSuccess(data);
     }
 
-    function _safeBalanceOf(
-        address account_,
-        address token_
-    ) private view returns (uint256 balance) {
-        if (token_ == NATIVE_TOKEN) {
-            balance = address(account_).balance;
-        } else {
-            (bool success, bytes memory data) = token_.staticcall(
-                abi.encodeCall(IERC20Upgradeable.balanceOf, (account_))
-            );
-            if (success) {
-                return abi.decode(data, (uint256));
-            }
-            success.handleRevertIfNotSuccess(data);
-        }
-    }
-
     /**
      * @dev This empty reserved space is put in place to allow future versions to add new
      * variables without shifting down storage in the inheritance chain.
