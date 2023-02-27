@@ -4,10 +4,9 @@ pragma solidity 0.8.19;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { FeeCollectors } from "./internal/FeeCollectors.sol";
+import { IRewardSplitter } from "./interfaces/IRewardSplitter.sol";
 
-error NotAuthorized();
-
-contract RewardSplitter is Initializable, Ownable, FeeCollectors {
+contract RewardSplitter is IRewardSplitter, Initializable, Ownable, FeeCollectors {
     bytes32 private constant TRANSFER_SELECTOR =
         0xa9059cbb00000000000000000000000000000000000000000000000000000000;
     bytes32 private constant BALANCEOF_SELECTOR =
@@ -25,7 +24,7 @@ contract RewardSplitter is Initializable, Ownable, FeeCollectors {
     }
 
     // do we really need a nonReentrant modifier?
-    function slittingRewards(address[] calldata tokens_, bool withNative_) external {
+    function slittingRewards(address[] calldata tokens_, bool withNative_) external override {
         if (!_contain(_msgSender())) revert NotAuthorized();
 
         uint256 tokensLength = tokens_.length;
@@ -70,12 +69,14 @@ contract RewardSplitter is Initializable, Ownable, FeeCollectors {
                 ++i;
             }
         }
+
+        emit RewardsSplitted();
     }
 
     function configFees(
         address[] calldata recipients_,
         uint256[] calldata percents_
-    ) external onlyOwner {
+    ) external override onlyOwner {
         _configFees(recipients_, percents_);
     }
 
@@ -89,6 +90,7 @@ contract RewardSplitter is Initializable, Ownable, FeeCollectors {
 
     function _safeTransferNative(address account_, uint256 amount_) private {
         if (amount_ == 0) return;
+
         assembly {
             let s := call(gas(), account_, amount_, 0, 0, 0, 0)
             if iszero(s) {
@@ -103,15 +105,14 @@ contract RewardSplitter is Initializable, Ownable, FeeCollectors {
         uint256 amount_
     ) private returns (bool success) {
         if (amount_ == 0) return true;
+
         assembly {
             let mptr := mload(0x40)
-
             mstore(mptr, TRANSFER_SELECTOR)
             mstore(add(mptr, 0x04), account_)
             mstore(add(mptr, 0x24), amount_)
 
             success := call(gas(), token_, 0, mptr, add(mptr, 0x44), 0, 0x20)
-
             if iszero(success) {
                 revert(0, 0)
             }
@@ -127,6 +128,7 @@ contract RewardSplitter is Initializable, Ownable, FeeCollectors {
             let mptr := mload(0x40)
             mstore(mptr, BALANCEOF_SELECTOR)
             mstore(add(mptr, 0x04), account_)
+
             let success := staticcall(gas(), token_, mptr, add(mptr, 0x24), 0x00, 0x20)
             if iszero(success) {
                 revert(0, 0)
