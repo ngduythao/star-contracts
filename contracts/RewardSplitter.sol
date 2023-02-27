@@ -3,18 +3,15 @@ pragma solidity 0.8.19;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { FeeCollectors } from "./internal/FeeCollectors.sol";
-import { ErrorHandler } from "./libraries/ErrorHandler.sol";
 
-error InvalidTransferInfo();
 error NotAuthorized();
 
-contract RewardSplitter is ReentrancyGuard, Initializable, Ownable, FeeCollectors {
-    using ErrorHandler for bool;
-
-    bytes4 private constant TRANSFER_SELECTOR = 0xa9059cbb;
-    bytes4 private constant BALANCEOF_SELECTOR = 0x70a08231;
+contract RewardSplitter is Initializable, Ownable, FeeCollectors {
+    bytes32 private constant TRANSFER_SELECTOR =
+        0xa9059cbb00000000000000000000000000000000000000000000000000000000;
+    bytes32 private constant BALANCEOF_SELECTOR =
+        0x70a0823100000000000000000000000000000000000000000000000000000000;
 
     receive() external payable {}
 
@@ -27,25 +24,42 @@ contract RewardSplitter is ReentrancyGuard, Initializable, Ownable, FeeCollector
         _configFees(recipients_, percents_);
     }
 
-    // do we really need nonReentrant?
-    function slittingRewards(address[] calldata tokens_) external nonReentrant {
+    // do we really need a nonReentrant modifier?
+    function slittingRewards(address[] calldata tokens_, bool withNative_) external {
         if (!_contain(_msgSender())) revert NotAuthorized();
 
         uint256 tokensLength = tokens_.length;
         uint256 recipientsLength = _viewRecipientsLength();
+        uint256 total;
+        uint256 i;
+        uint256 j;
+        address recipient;
 
-        for (uint256 i = 0; i < tokensLength; ) {
-            address token = tokens_[i];
-            uint256 total = _safeBalanceOf(token, address(this));
-            bool isNative = token == address(0);
+        if (withNative_) {
+            assembly {
+                total := selfbalance()
+            }
+            for (i = 0; i < recipientsLength; ) {
+                recipient = _getRecipient(i);
 
-            for (uint256 j = 0; j < recipientsLength; ) {
-                address recipient = _getRecipient(j);
-                uint256 amount = (total * _percents[recipient]) / HUNDER_PERCENT;
+                _safeTransferNative(recipient, (total * _percents[recipient]) / HUNDER_PERCENT);
 
-                if (recipient == address(0) || amount == 0) revert InvalidTransferInfo();
+                unchecked {
+                    ++i;
+                }
+            }
+        }
 
-                _safeTransfer(isNative, token, recipient, amount);
+        for (i = 0; i < tokensLength; ) {
+            total = _safeBalanceOf(tokens_[i], address(this));
+            for (j = 0; j < recipientsLength; ) {
+                recipient = _getRecipient(j);
+
+                _safeTransferToken(
+                    tokens_[i],
+                    recipient,
+                    (total * _percents[recipient]) / HUNDER_PERCENT
+                );
 
                 unchecked {
                     ++j;
@@ -65,44 +79,59 @@ contract RewardSplitter is ReentrancyGuard, Initializable, Ownable, FeeCollector
         _configFees(recipients_, percents_);
     }
 
-    function withdraw(address token_, uint256 amount_) external onlyOwner {
-        _safeTransfer(token_ == address(0), token_, _msgSender(), amount_);
+    function withdraw(address token_, address account_, uint256 amount_) external onlyOwner {
+        if (token_ == address(0)) {
+            _safeTransferNative(account_, amount_);
+        } else {
+            _safeTransferToken(token_, account_, amount_);
+        }
     }
 
-    function _safeTransfer(
-        bool isNative_,
+    function _safeTransferNative(address account_, uint256 amount_) private {
+        if (amount_ == 0) return;
+        assembly {
+            let s := call(gas(), account_, amount_, 0, 0, 0, 0)
+            if iszero(s) {
+                revert(0, 0)
+            }
+        }
+    }
+
+    function _safeTransferToken(
         address token_,
         address account_,
         uint256 amount_
-    ) private {
-        bool success;
-        bytes memory returnData;
+    ) private returns (bool success) {
+        if (amount_ == 0) return true;
+        assembly {
+            let mptr := mload(0x40)
 
-        if (isNative_) {
-            (success, returnData) = account_.call{ value: amount_ }("");
-        } else {
-            (success, returnData) = token_.call(
-                abi.encodeWithSelector(TRANSFER_SELECTOR, account_, amount_)
-            );
+            mstore(mptr, TRANSFER_SELECTOR)
+            mstore(add(mptr, 0x04), account_)
+            mstore(add(mptr, 0x24), amount_)
+
+            success := call(gas(), token_, 0, mptr, add(mptr, 0x44), 0, 0x20)
+
+            if iszero(success) {
+                revert(0, 0)
+            }
+            success := mload(0x00)
         }
-
-        success.handleRevertIfNotSuccess(returnData);
     }
 
     function _safeBalanceOf(
         address token_,
         address account_
-    ) private view returns (uint256 balance) {
-        if (token_ == address(0)) {
-            balance = address(account_).balance;
-        } else {
-            (bool success, bytes memory data) = token_.staticcall(
-                abi.encodeWithSelector(BALANCEOF_SELECTOR, account_)
-            );
-            if (success) {
-                return abi.decode(data, (uint256));
+    ) private view returns (uint256 result) {
+        assembly {
+            let mptr := mload(0x40)
+            mstore(mptr, BALANCEOF_SELECTOR)
+            mstore(add(mptr, 0x04), account_)
+            let success := staticcall(gas(), token_, mptr, add(mptr, 0x24), 0x00, 0x20)
+            if iszero(success) {
+                revert(0, 0)
             }
-            success.handleRevertIfNotSuccess(data);
+            result := mload(0x00)
         }
     }
 }

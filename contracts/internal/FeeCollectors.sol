@@ -5,6 +5,7 @@ pragma solidity 0.8.19;
 import { EnumerableSet } from "../libraries/EnumerableSet.sol";
 
 error LengthMisMatch();
+error InvalidRecipient();
 
 contract FeeCollectors {
     event FeeUpdated();
@@ -20,6 +21,7 @@ contract FeeCollectors {
         if (percents_.length != length) revert LengthMisMatch();
 
         for (uint256 i = 0; i < length; ) {
+            if (recipients_[i] == address(0)) revert InvalidRecipient();
             if (percents_[i] != 0) {
                 _feeRecipients.add(recipients_[i]); // whether exists or not
                 _percents[recipients_[i]] = percents_[i];
@@ -63,8 +65,6 @@ contract FeeCollectors {
     function _contain(address recipient) internal view returns (bool) {
         return _feeRecipients.contains(recipient);
     }
-
-    /* ========== VIEW ========== */
 
     uint256[50] private __gap;
 }
