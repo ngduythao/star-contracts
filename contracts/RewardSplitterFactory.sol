@@ -22,6 +22,7 @@ contract RewardSplitterFactory is
 {
     using ErrorHandler for bool;
 
+    /// @dev value is the first 4 bytes of keccak256(initialize(address,address[],uint256[]))
     bytes4 private constant INITIALIZE_SELECTOR = 0xff1d5752;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
