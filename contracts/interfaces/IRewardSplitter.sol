@@ -9,6 +9,4 @@ interface IRewardSplitter {
     function slittingRewards(address[] calldata tokens_, bool withNative_) external;
 
     function configFees(address[] calldata recipients_, uint256[] calldata percents_) external;
-
-    function withdraw(address token_, address account_, uint256 amount_) external;
 }

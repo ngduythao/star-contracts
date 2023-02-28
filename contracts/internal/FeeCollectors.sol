@@ -37,11 +37,7 @@ contract FeeCollectors {
         emit FeeUpdated();
     }
 
-    function viewFees()
-        external
-        view
-        returns (address[] memory recipients, uint256[] memory fees)
-    {
+    function viewFees() public view returns (address[] memory, uint256[] memory fees) {
         uint256 length = _feeRecipients.length();
         fees = new uint256[](length);
 
@@ -56,10 +52,6 @@ contract FeeCollectors {
 
     function _viewRecipientsLength() internal view returns (uint256) {
         return _feeRecipients.length();
-    }
-
-    function _getRecipient(uint256 index) internal view returns (address) {
-        return _feeRecipients.at(index);
     }
 
     function _contain(address recipient) internal view returns (bool) {

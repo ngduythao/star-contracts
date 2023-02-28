@@ -32,16 +32,14 @@ contract RewardSplitter is IRewardSplitter, Initializable, Ownable, FeeCollector
         uint256 total;
         uint256 i;
         uint256 j;
-        address recipient;
+        (address[] memory recipients, uint256[] memory fees) = viewFees();
 
         if (withNative_) {
             assembly {
                 total := selfbalance()
             }
             for (i = 0; i < recipientsLength; ) {
-                recipient = _getRecipient(i);
-
-                _safeTransferNative(recipient, (total * _percents[recipient]) / HUNDER_PERCENT);
+                _safeTransferNative(recipients[i], (total * fees[i]) / HUNDER_PERCENT);
 
                 unchecked {
                     ++i;
@@ -52,14 +50,7 @@ contract RewardSplitter is IRewardSplitter, Initializable, Ownable, FeeCollector
         for (i = 0; i < tokensLength; ) {
             total = _safeBalanceOf(tokens_[i], address(this));
             for (j = 0; j < recipientsLength; ) {
-                recipient = _getRecipient(j);
-
-                _safeTransferToken(
-                    tokens_[i],
-                    recipient,
-                    (total * _percents[recipient]) / HUNDER_PERCENT
-                );
-
+                _safeTransferToken(tokens_[i], recipients[i], (total * fees[i]) / HUNDER_PERCENT);
                 unchecked {
                     ++j;
                 }
