@@ -40,6 +40,8 @@ const chainIds = {
   polygon: 137,
   mumbai: 80001,
   wraptag: 24052022,
+  arbitrum: 42161,
+  arbitrumt: 421613,
 };
 
 function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
@@ -75,6 +77,12 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
     case "wraptag":
       jsonRpcUrl = process.env.WRAPTAG_URL || "";
       break;
+    case "arbitrum":
+      jsonRpcUrl = process.env.ARBITRUM_URL || "";
+      break;
+    case "arbitrumt":
+      jsonRpcUrl = process.env.ARBITRUM_T_URL || "";
+      break;
     default:
       jsonRpcUrl = "https://" + chain + ".infura.io/v3/" + infuraApiKey;
   }
@@ -97,6 +105,8 @@ const config: HardhatUserConfig = {
       bscTestnet: process.env.BSCSCAN_API_KEY || "",
       polygon: process.env.POLYGONSCAN_API_KEY || "",
       polygonMumbai: process.env.POLYGONSCAN_API_KEY || "",
+      arbitrumOne: process.env.ARBITRUM_API_KEY || "",
+      arbitrumGoerli: process.env.ARBITRUM_API_KEY || "",
     },
   },
   gasReporter: {
@@ -117,6 +127,8 @@ const config: HardhatUserConfig = {
     polygon: getChainConfig("polygon"),
     mumbai: getChainConfig("mumbai"),
     wraptag: getChainConfig("wraptag"),
+    arbitrumOne: getChainConfig("arbitrum"),
+    arbitrumGoerli: getChainConfig("arbitrumt"),
   },
   paths: {
     artifacts: "./artifacts",

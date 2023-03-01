@@ -40,11 +40,12 @@ contract RewardSplitterFactory is
     }
 
     function createContract(
+        bytes32 salt_,
         address[] calldata recipients_,
         uint256[] calldata percents_
     ) external {
         address instance = _cheapClone(
-            bytes32(block.number),
+            salt_,
             INITIALIZE_SELECTOR,
             abi.encode(_msgSender(), recipients_, percents_)
         );
