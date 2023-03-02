@@ -28,28 +28,44 @@ contract RewardSplitter is IRewardSplitter, Initializable, Ownable, FeeCollector
         if (!_contain(_msgSender())) revert NotAuthorized();
 
         uint256 tokensLength = tokens_.length;
-        uint256 recipientsLength = _viewRecipientsLength();
+        uint256 rLength = _viewRecipientsLength();
         uint256 total;
         uint256 i;
         uint256 j;
+        uint256 result;
         (address[] memory recipients, uint256[] memory fees) = viewFees();
 
         if (withNative_) {
             assembly {
                 total := selfbalance()
-            }
-            for (i = 0; i < recipientsLength; ) {
-                _safeTransferNative(recipients[i], (total * fees[i]) / HUNDER_PERCENT);
+                let recipientSlot := add(recipients, 0x20)
+                let feeSlot := add(fees, 0x20)
 
-                unchecked {
-                    ++i;
+                for {
+                    let end := add(recipientSlot, shl(5, rLength))
+                } lt(recipientSlot, end) {
+                    recipientSlot := add(recipientSlot, 0x20)
+                    feeSlot := add(feeSlot, 0x20)
+                } {
+                    result := call(
+                        gas(),
+                        mload(recipientSlot),
+                        div(mul(total, mload(feeSlot)), HUNDER_PERCENT),
+                        0,
+                        0,
+                        0,
+                        0
+                    )
+                    if iszero(result) {
+                        revert(0, 0)
+                    }
                 }
             }
         }
 
         for (i = 0; i < tokensLength; ) {
             total = _safeBalanceOf(tokens_[i], address(this));
-            for (j = 0; j < recipientsLength; ) {
+            for (j = 0; j < rLength; ) {
                 _safeTransferToken(tokens_[i], recipients[i], (total * fees[i]) / HUNDER_PERCENT);
                 unchecked {
                     ++j;
