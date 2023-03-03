@@ -16,8 +16,14 @@ abstract contract FactoryUpgradeable is Initializable {
     address public implementation;
     address[] public clones;
 
+    mapping(bytes32 => address) private _instances;
+
     function getContracts() external view returns (address[] memory) {
         return clones;
+    }
+
+    function getInstance(bytes32 salt_) external view returns (address) {
+        return _instances[salt_];
     }
 
     function __Factory_init(address implement_) internal onlyInitializing {}
@@ -40,8 +46,9 @@ abstract contract FactoryUpgradeable is Initializable {
         if (!success) {
             success.handleRevertIfNotSuccess(revertData);
         }
+        _instances[salt_] = clone;
         clones.push(clone);
     }
 
-    uint256[48] private __gap;
+    uint256[47] private __gap;
 }
