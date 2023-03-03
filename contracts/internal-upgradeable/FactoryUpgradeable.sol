@@ -14,12 +14,12 @@ abstract contract FactoryUpgradeable is Initializable {
     using ClonesUpgradeable for address;
 
     address public implementation;
-    address[] public clones;
+    address[] private _clones;
 
     mapping(bytes32 => address) private _instances;
 
     function getContracts() external view returns (address[] memory) {
-        return clones;
+        return _clones;
     }
 
     function getInstance(bytes32 salt_) external view returns (address) {
@@ -47,7 +47,7 @@ abstract contract FactoryUpgradeable is Initializable {
             success.handleRevertIfNotSuccess(revertData);
         }
         _instances[salt_] = clone;
-        clones.push(clone);
+        _clones.push(clone);
     }
 
     uint256[47] private __gap;

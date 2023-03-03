@@ -27,53 +27,104 @@ contract RewardSplitter is IRewardSplitter, Initializable, Ownable, FeeCollector
     function slittingRewards(address[] calldata tokens_, bool withNative_) external override {
         if (!_contain(_msgSender())) revert NotAuthorized();
 
-        uint256 tokensLength = tokens_.length;
         uint256 rLength = _viewRecipientsLength();
-        uint256 total;
-        uint256 i;
-        uint256 j;
-        uint256 result;
         (address[] memory recipients, uint256[] memory fees) = viewFees();
 
-        if (withNative_) {
-            assembly {
-                total := selfbalance()
-                let recipientSlot := add(recipients, 0x20)
-                let feeSlot := add(fees, 0x20)
+        assembly {
+            let contractAddress := address()
+            let recipientSlot
+            let feeSlot
+            let endLoop
+            let total
+            let callResult
 
-                for {
-                    let end := add(recipientSlot, shl(5, rLength))
-                } lt(recipientSlot, end) {
-                    recipientSlot := add(recipientSlot, 0x20)
-                    feeSlot := add(feeSlot, 0x20)
-                } {
-                    result := call(
-                        gas(),
-                        mload(recipientSlot),
-                        div(mul(total, mload(feeSlot)), HUNDER_PERCENT),
-                        0,
-                        0,
-                        0,
-                        0
-                    )
-                    if iszero(result) {
-                        revert(0, 0)
+            if withNative_ {
+                total := selfbalance()
+
+                if gt(total, 0) {
+                    recipientSlot := add(recipients, 0x20)
+                    feeSlot := add(fees, 0x20)
+
+                    for {
+                        endLoop := add(recipientSlot, shl(5, rLength))
+                    } lt(recipientSlot, endLoop) {
+                        recipientSlot := add(recipientSlot, 0x20)
+                        feeSlot := add(feeSlot, 0x20)
+                    } {
+                        callResult := call(
+                            gas(),
+                            mload(recipientSlot),
+                            div(mul(total, mload(feeSlot)), HUNDER_PERCENT),
+                            0,
+                            0,
+                            0,
+                            0
+                        )
+                        if iszero(callResult) {
+                            revert(0, 0)
+                        }
                     }
                 }
             }
-        }
 
-        for (i = 0; i < tokensLength; ) {
-            total = _safeBalanceOf(tokens_[i], address(this));
-            for (j = 0; j < rLength; ) {
-                _safeTransferToken(tokens_[i], recipients[i], (total * fees[i]) / HUNDER_PERCENT);
-                unchecked {
-                    ++j;
+            if tokens_.length {
+                for {
+                    let offset := tokens_.offset
+                    endLoop := add(tokens_.offset, shl(5, tokens_.length)) // length * 32
+                } lt(offset, endLoop) {
+                    offset := add(offset, 0x20)
+                } {
+                    let mptr := mload(0x40)
+                    mstore(mptr, BALANCEOF_SELECTOR)
+                    mstore(add(mptr, 0x04), contractAddress)
+
+                    callResult := staticcall(
+                        gas(),
+                        calldataload(offset),
+                        mptr,
+                        add(mptr, 0x24),
+                        0x00,
+                        0x20
+                    )
+                    if iszero(callResult) {
+                        revert(0, 0)
+                    }
+                    total := mload(0x00)
+
+                    recipientSlot := add(recipients, 0x20)
+                    feeSlot := add(fees, 0x20)
+
+                    for {
+                        let nestedEnd := add(recipientSlot, shl(5, rLength))
+                    } lt(recipientSlot, nestedEnd) {
+                        recipientSlot := add(recipientSlot, 0x20)
+                        feeSlot := add(feeSlot, 0x20)
+                    } {
+                        if gt(total, 0) {
+                            mptr := mload(0x40)
+                            mstore(mptr, TRANSFER_SELECTOR)
+                            mstore(add(mptr, 0x04), mload(recipientSlot))
+                            mstore(
+                                add(mptr, 0x24),
+                                div(mul(total, mload(feeSlot)), HUNDER_PERCENT)
+                            )
+
+                            callResult := call(
+                                gas(),
+                                calldataload(offset),
+                                0,
+                                mptr,
+                                add(mptr, 0x44),
+                                0,
+                                0x20
+                            )
+
+                            if iszero(callResult) {
+                                revert(0, 0)
+                            }
+                        }
+                    }
                 }
-            }
-
-            unchecked {
-                ++i;
             }
         }
 
@@ -85,62 +136,5 @@ contract RewardSplitter is IRewardSplitter, Initializable, Ownable, FeeCollector
         uint256[] calldata percents_
     ) external override onlyOwner {
         _configFees(recipients_, percents_);
-    }
-
-    function withdraw(address token_, address account_, uint256 amount_) external onlyOwner {
-        if (token_ == address(0)) {
-            _safeTransferNative(account_, amount_);
-        } else {
-            _safeTransferToken(token_, account_, amount_);
-        }
-    }
-
-    function _safeTransferNative(address account_, uint256 amount_) private {
-        if (amount_ == 0) return;
-
-        assembly {
-            let s := call(gas(), account_, amount_, 0, 0, 0, 0)
-            if iszero(s) {
-                revert(0, 0)
-            }
-        }
-    }
-
-    function _safeTransferToken(
-        address token_,
-        address account_,
-        uint256 amount_
-    ) private returns (bool success) {
-        if (amount_ == 0) return true;
-
-        assembly {
-            let mptr := mload(0x40)
-            mstore(mptr, TRANSFER_SELECTOR)
-            mstore(add(mptr, 0x04), account_)
-            mstore(add(mptr, 0x24), amount_)
-
-            success := call(gas(), token_, 0, mptr, add(mptr, 0x44), 0, 0x20)
-            if iszero(success) {
-                revert(0, 0)
-            }
-            success := mload(0x00)
-        }
-    }
-
-    function _safeBalanceOf(
-        address token_,
-        address account_
-    ) private view returns (uint256 result) {
-        assembly {
-            let mptr := mload(0x40)
-            mstore(mptr, BALANCEOF_SELECTOR)
-            mstore(add(mptr, 0x04), account_)
-
-            let success := staticcall(gas(), token_, mptr, add(mptr, 0x24), 0x00, 0x20)
-            if iszero(success) {
-                revert(0, 0)
-            }
-            result := mload(0x00)
-        }
     }
 }
